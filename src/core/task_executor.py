@@ -23,9 +23,7 @@ PLATFORM_KEYWORDS = {
 }
 
 MODO_FOCO_KEYWORDS = [
-    "activar modo foco", "activar modo trabajo", "activar foco", "modo concentración",
-    "empezar a trabajar", "iniciar trabajo", "activar trabajo",
-    "modo ventas", "entorno de trabajo", "Modo ventas"
+    "Modo ventas"
 ]
 
 class TaskExecutor:
@@ -131,40 +129,51 @@ class TaskExecutor:
     # ── Handlers ──────────────────────────────────────────────────────────
 
     def _handle_modo_foco(self) -> str:
-        console = Console()
         from rich.console import Console
+        console = Console()
         console.print("[yellow]Activando Modo Trabajo...[/yellow]")
-        resultados = []
-        urls = [
-            ("WhatsApp",  "https://web.whatsapp.com"),
 
+        WORK_MODE = [
+            ("WhatsApp",  "https://web.whatsapp.com"),
             ("Messenger", "https://www.messenger.com/marketplace"),
             ("Facebook",  "https://www.facebook.com/marketplace"),
         ]
-        for i, (nombre, url) in enumerate(urls):
+
+        ctx = self.browser._context
+        resultados = []
+        pages = {}
+
+        for nombre, url in WORK_MODE:
             try:
-
-                if i == 0:
-                    # Primera URL — navegar en la pestaña actual
-                    self.browser._page.goto(url, wait_until="domcontentloaded", timeout=30000)
+                # Verificar si ya está abierta
+                for existing_page in ctx.pages:
+                    if url.split("/")[2] in existing_page.url:
+                        existing_page.bring_to_front()
+                        pages[nombre] = existing_page
+                        resultados.append(f"{nombre} ✓ (ya abierta)")
+                        break
                 else:
-                    # Pestañas siguientes — Ctrl+T para abrir nueva pestaña
-                    self.browser._page.keyboard.press("Control+t")
-                    time.sleep(0.8)
-                    # Obtener la nueva pestaña activa
-                    pages = self.browser._context.pages
-                    new_page = pages[-1]
-                    # Actualizar la página activa
-                    self.browser._page = new_page
-                    new_page.goto(url, wait_until="domcontentloaded", timeout=30000)
-                time.sleep(1.5)
-                resultados.append(f"{nombre} ✓")
+                    # Crear pestaña nueva e independiente
+                    page = ctx.new_page()
+                    page.goto(url, wait_until="domcontentloaded", timeout=30000)
+                    pages[nombre] = page
+                    resultados.append(f"{nombre} ✓")
+                    logger.info(f"Modo Trabajo: {nombre} abierto en nueva pestaña")
 
-                logger.info(f"Modo Trabajo: {nombre} abierto")
+                time.sleep(1)
+
             except Exception as e:
                 resultados.append(f"{nombre} ✗")
-
                 logger.warning(f"Modo Trabajo: {nombre} falló: {e}")
+
+        # Mantener referencia a la primera pestaña útil
+        if pages:
+            first = list(pages.values())[0]
+            try:
+                self.browser._page = first
+                first.bring_to_front()
+            except Exception:
+                pass
 
         resumen = "Modo Trabajo activado: " + " | ".join(resultados)
         console.print(f"[green]{resumen}[/green]")
@@ -249,14 +258,37 @@ class TaskExecutor:
         contact = self._extract_contact(params)
         message = self._extract_message(params)
 
+        ctx = self.browser._context
         current_url = ""
         try:
-            current_url = self.browser.page.url
+            current_url = self.browser._page.url
         except Exception:
             pass
 
         if "web.whatsapp.com" not in current_url:
-            self.whatsapp.open()
+            # Buscar si ya existe una pestaña con WhatsApp
+            wa_page = None
+            try:
+                for p in ctx.pages:
+                    if "web.whatsapp.com" in p.url:
+                        wa_page = p
+                        break
+            except Exception:
+                pass
+
+            if wa_page:
+                wa_page.bring_to_front()
+                self.browser._page = wa_page
+            else:
+                # Abrir en nueva pestaña si ya hay otras
+                try:
+                    pages = ctx.pages
+                    if len(pages) > 1 or (len(pages) == 1 and pages[0].url not in ("about:blank", "")):
+                        new_page = ctx.new_page()
+                        self.browser._page = new_page
+                except Exception:
+                    pass
+                self.whatsapp.open()
 
         if action == "open":
             return "WhatsApp Web abierto"
@@ -307,27 +339,65 @@ class TaskExecutor:
         contact = self._extract_contact(params)
         message = self._extract_message(params)
 
-        # SIEMPRE Marketplace — URL hardcodeada
+        # Verificar si Messenger ya está abierto en alguna pestaña
+        ctx = self.browser._context
         current_url = ""
         try:
-            current_url = self.browser.page.url
+            current_url = self.browser._page.url
         except Exception:
             pass
 
         if "messenger.com/marketplace" not in current_url:
-            self.browser.navigate(
-                "https://www.messenger.com/marketplace",
-                wait_until="domcontentloaded"
-            )
+            # Buscar si ya existe una pestaña con Messenger
+            messenger_page = None
+            try:
+                for p in ctx.pages:
+                    if "messenger.com" in p.url:
+                        messenger_page = p
+                        break
+            except Exception:
+                pass
+
+            if messenger_page:
+                # Ya existe — traerla al frente y actualizar referencia
+                messenger_page.bring_to_front()
+                self.browser._page = messenger_page
+                if "marketplace" not in messenger_page.url:
+                    messenger_page.goto(
+                        "https://www.messenger.com/marketplace",
+                        wait_until="domcontentloaded"
+                    )
+            else:
+                # No existe — abrir en nueva pestaña si ya hay otras abiertas
+                try:
+                    pages = ctx.pages
+                    if len(pages) > 1 or (len(pages) == 1 and pages[0].url not in ("about:blank", "")):
+                        new_page = ctx.new_page()
+                        new_page.goto(
+                            "https://www.messenger.com/marketplace",
+                            wait_until="domcontentloaded",
+                            timeout=30000
+                        )
+                        self.browser._page = new_page
+                    else:
+                        self.browser.navigate(
+                            "https://www.messenger.com/marketplace",
+                            wait_until="domcontentloaded"
+                        )
+                except Exception:
+                    self.browser.navigate(
+                        "https://www.messenger.com/marketplace",
+                        wait_until="domcontentloaded"
+                    )
             time.sleep(3)
             try:
-                self.browser.page.wait_for_selector(
-                    '[aria-label^="Chat en grupo:"]',
-                    timeout=15000
+                self.browser._page.wait_for_selector(
+                    '[aria-label^="Chat en grupo:"]', timeout=15000
                 )
             except Exception:
                 pass
 
+        # ... resto igual que antes
         if action in ("open", "open_marketplace"):
             return "Messenger Marketplace abierto"
 
@@ -347,7 +417,6 @@ class TaskExecutor:
             self.messenger.send_marketplace_message(contact, message)
             return f"Mensaje enviado a {contact} en Marketplace"
 
-        # Default → resumir
         summary = self.messenger.summarize_marketplace(self.executor_gpt)
         from rich.console import Console
         Console().print(f"\n[yellow]Jarvis:[/yellow] {summary}\n")
@@ -406,9 +475,10 @@ class TaskExecutor:
             params.get("text") or
             ""
         )
+        mode = params.get("mode", "")
 
-        # Verificar modo foco en el action
-        all_text = f"{action} {message}".lower()
+        # Verificar modo foco en TODO el contenido del params
+        all_text = f"{action} {message} {mode} {json.dumps(params)}".lower()
         if self._is_modo_foco(all_text):
             return self._handle_modo_foco()
 

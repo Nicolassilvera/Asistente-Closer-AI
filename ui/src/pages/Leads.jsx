@@ -4,6 +4,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Search, Plus, Phone, MessageCircle } from 'lucide-react'
 import { getLeads, updateStatus } from '../api'
 import StatusBadge from '../components/StatusBadge'
+import LeadForm from '../components/LeadForm'
+import LeadDetail from './LeadDetail'
 
 const STATUSES = [
   'nuevo','analizado','contactado','respondio',
@@ -11,9 +13,11 @@ const STATUSES = [
 ]
 
 export default function Leads() {
-  const qc                    = useQueryClient()
-  const [search, setSearch]   = useState('')
-  const [filter, setFilter]   = useState('')
+  const qc                      = useQueryClient()
+  const [search, setSearch]     = useState('')
+  const [filter, setFilter]     = useState('')
+  const [showForm, setShowForm] = useState(false)
+  const [selectedId, setSelectedId] = useState(null)
 
   const { data: leads, isLoading } = useQuery({
     queryKey: ['leads', search, filter],
@@ -26,6 +30,11 @@ export default function Leads() {
     onSuccess:  () => qc.invalidateQueries({ queryKey: ['leads'] })
   })
 
+  // Si hay un lead seleccionado, mostrar el detalle
+  if (selectedId) {
+    return <LeadDetail leadId={selectedId} onBack={() => setSelectedId(null)} />
+  }
+
   return (
     <div className="p-6 space-y-4">
       <div className="flex items-center justify-between">
@@ -33,9 +42,10 @@ export default function Leads() {
           <h1 className="text-xl font-semibold text-jarvis-text">Leads</h1>
           <p className="text-jarvis-muted text-sm">{leads?.length ?? 0} prospectos</p>
         </div>
-        <button className="flex items-center gap-2 px-4 py-2 bg-jarvis-purple
-                           hover:bg-purple-500 rounded-lg text-sm font-medium
-                           text-white transition-colors">
+        <button onClick={() => setShowForm(true)}
+          className="flex items-center gap-2 px-4 py-2 bg-jarvis-purple
+                     hover:bg-purple-500 rounded-lg text-sm font-medium
+                     text-white transition-colors">
           <Plus size={16} /> Nuevo lead
         </button>
       </div>
@@ -89,7 +99,8 @@ export default function Leads() {
             )}
             {leads?.map(lead => (
               <tr key={lead.id}
-                className="hover:bg-jarvis-surface/50 transition-colors">
+                onClick={() => setSelectedId(lead.id)}
+                className="hover:bg-jarvis-surface/50 transition-colors cursor-pointer">
                 <td className="px-4 py-3">
                   <div className="font-medium text-jarvis-text">{lead.company_name}</div>
                   {lead.contact_name && (
@@ -107,7 +118,7 @@ export default function Leads() {
                     ★ {lead.lead_score ?? 0}
                   </span>
                 </td>
-                <td className="px-4 py-3">
+                <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
                   <select
                     value={lead.lead_status}
                     onChange={e => statusMutation.mutate({ id: lead.id, status: e.target.value })}
@@ -117,7 +128,7 @@ export default function Leads() {
                     ))}
                   </select>
                 </td>
-                <td className="px-4 py-3">
+                <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
                   <div className="flex items-center gap-2">
                     {lead.phone && (
                       <a href={`tel:${lead.phone}`}
@@ -141,6 +152,8 @@ export default function Leads() {
           </tbody>
         </table>
       </div>
+
+      {showForm && <LeadForm onClose={() => setShowForm(false)} />}
     </div>
   )
 }
