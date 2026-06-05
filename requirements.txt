@@ -1,0 +1,40 @@
+# IA
+groq>=0.9.0
+
+# Automatización web
+playwright>=1.44.0
+
+# Base de datos
+# sqlite3 viene con Python
+
+# API
+fastapi>=0.111.0
+uvicorn>=0.30.0
+websockets>=12.0
+
+# Web scraping
+beautifulsoup4>=4.12.0
+
+# Utilidades
+python-dotenv>=1.0.0
+rich>=13.7.0
+pydantic>=2.0.0
+
+# --- Próximamente (instalar cuando lleguemos a ese módulo) ---
+# Voz
+# SpeechRecognition>=3.10.0
+# pyttsx3>=2.90
+# pyaudio>=0.2.14
+# openai-whisper>=20231117
+
+# Automatización desktop
+# pyautogui>=0.9.54
+# pywinauto>=0.6.8
+
+# Visión
+# opencv-python>=4.9.0
+# pytesseract>=0.3.10
+# pillow>=10.3.0
+
+# Wake word
+# pvporcupine>=3.0.0

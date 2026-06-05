@@ -1,0 +1,60 @@
+// ui/src/api.js
+import axios from 'axios'
+
+const BASE = 'http://localhost:8000/api'
+
+const api = axios.create({ baseURL: BASE })
+
+// ── Leads ──────────────────────────────────────────────
+export const getLeads = (params) =>
+  api.get('/leads', { params }).then(r => r.data)
+
+export const getLead = (id) =>
+  api.get(`/leads/${id}`).then(r => r.data)
+
+export const getHotLeads = () =>
+  api.get('/leads/hot').then(r => r.data)
+
+export const getFollowups = () =>
+  api.get('/leads/followups').then(r => r.data)
+
+export const createLead = (data) =>
+  api.post('/leads', data).then(r => r.data)
+
+export const updateLead = (id, data) =>
+  api.patch(`/leads/${id}`, data).then(r => r.data)
+
+export const updateStatus = (id, status, notes = '') =>
+  api.patch(`/leads/${id}/status`, { status, notes }).then(r => r.data)
+
+// ── Stats ──────────────────────────────────────────────
+export const getStats = () =>
+  api.get('/stats').then(r => r.data)
+
+// ── Eventos ────────────────────────────────────────────
+export const getEvents = (leadId) =>
+  api.get(`/leads/${leadId}/events`).then(r => r.data)
+
+// ── Conversaciones ─────────────────────────────────────
+export const getConversations = (leadId) =>
+  api.get(`/leads/${leadId}/conversations`).then(r => r.data)
+
+export const saveMessage = (leadId, data) =>
+  api.post(`/leads/${leadId}/conversations`, data).then(r => r.data)
+
+export const approveMessage = (convId) =>
+  api.patch(`/conversations/${convId}/approve`).then(r => r.data)
+
+// ── WebSocket ──────────────────────────────────────────
+export function connectWS(onMessage) {
+  const ws = new WebSocket('ws://localhost:8000/ws')
+  ws.onmessage = (e) => {
+    try { onMessage(JSON.parse(e.data)) }
+    catch {}
+  }
+  ws.onclose = () => {
+    // reconectar automáticamente después de 3 segundos
+    setTimeout(() => connectWS(onMessage), 3000)
+  }
+  return ws
+}

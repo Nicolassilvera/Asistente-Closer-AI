@@ -1,0 +1,104 @@
+{
+   "checksum": "11a3bc3380f1ba91045a045cb1317e38",
+   "roots": {
+      "bookmark_bar": {
+         "children": [ {
+            "date_added": "13056039062442144",
+            "date_last_used": "0",
+            "guid": "f1294a07-8f61-40b3-8627-7c40259e5ec2",
+            "id": "7",
+            "name": "Juegos de Hora de Aventura - Chrome Web Store",
+            "show_icon": false,
+            "source": "import_fre",
+            "type": "url",
+            "url": "https://chrome.google.com/webstore/detail/juegos-de-hora-de-aventur/ldkdmhfihbhchhopjnldndhmmjbihgjn?hl=es",
+            "visit_count": 0
+         }, {
+            "date_added": "13076848277927412",
+            "date_last_used": "0",
+            "guid": "fbce312b-7533-4e1d-98a3-8253a6ebbf2e",
+            "id": "8",
+            "name": "Bookmarks",
+            "show_icon": false,
+            "source": "import_fre",
+            "type": "url",
+            "url": "chrome://bookmarks/",
+            "visit_count": 0
+         } ],
+         "date_added": "13423851331283987",
+         "date_last_used": "0",
+         "date_modified": "0",
+         "guid": "0bc5d13f-2cba-5d74-951f-3f233fe6c908",
+         "id": "1",
+         "name": "Barra de favoritos",
+         "source": "unknown",
+         "type": "folder"
+      },
+      "other": {
+         "children": [ {
+            "children": [ {
+               "date_added": "13077071662547477",
+               "date_last_used": "0",
+               "guid": "10c50b93-c236-4998-b335-26f8863a84b5",
+               "id": "10",
+               "name": "Compu Nico - Hojas de cálculo de Google",
+               "show_icon": false,
+               "source": "import_fre",
+               "type": "url",
+               "url": "https://docs.google.com/spreadsheets/d/1y6z41d9TWP3FvNm80w2iLcM-pzaJ5GHAc9EtwUHexRc/edit#gid=0",
+               "visit_count": 0
+            }, {
+               "date_added": "13407402865312263",
+               "date_last_used": "0",
+               "guid": "c80b41df-d2d7-449c-a2cf-3cf5359757a5",
+               "id": "11",
+               "name": "",
+               "show_icon": false,
+               "source": "import_fre",
+               "type": "url",
+               "url": "https://www.facebook.com/?locale=es_LA",
+               "visit_count": 0
+            } ],
+            "date_added": "13423851405574572",
+            "date_last_used": "0",
+            "date_modified": "0",
+            "guid": "966b0678-4b4e-4849-9ef0-9dfdb9dcaa8c",
+            "id": "9",
+            "name": "compu nico",
+            "source": "import_fre",
+            "type": "folder"
+         } ],
+         "date_added": "13423851331283987",
+         "date_last_used": "0",
+         "date_modified": "0",
+         "guid": "82b081ec-3dd3-529c-8475-ab6c344590dd",
+         "id": "2",
+         "name": "Otros favoritos",
+         "source": "unknown",
+         "type": "folder"
+      },
+      "synced": {
+         "children": [  ],
+         "date_added": "13423851331283987",
+         "date_last_used": "0",
+         "date_modified": "0",
+         "guid": "4cf2e351-0e85-532b-bb37-df045d8f8d0f",
+         "id": "3",
+         "name": "Favoritos móviles",
+         "source": "unknown",
+         "type": "folder"
+      },
+      "workspaces_v2": {
+         "children": [  ],
+         "date_added": "13423851331283987",
+         "date_last_used": "0",
+         "date_modified": "0",
+         "guid": "75aa6670-344f-549d-b742-660f029506ab",
+         "id": "5",
+         "name": "Áreas de trabajo",
+         "source": "unknown",
+         "type": "folder"
+      }
+   },
+   "version": 1
+}

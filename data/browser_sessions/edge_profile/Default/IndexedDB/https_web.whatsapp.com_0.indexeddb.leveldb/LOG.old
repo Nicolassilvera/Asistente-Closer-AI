@@ -1,0 +1,41 @@
+2026/06/05-01:56:30.529 371c Reusing MANIFEST E:\Jarvis Emprendedor\jarvis\data\browser_sessions\edge_profile\Default\IndexedDB\https_web.whatsapp.com_0.indexeddb.leveldb/MANIFEST-012451
+2026/06/05-01:56:30.530 371c Recovering log #13336
+2026/06/05-01:56:30.549 371c Reusing old log E:\Jarvis Emprendedor\jarvis\data\browser_sessions\edge_profile\Default\IndexedDB\https_web.whatsapp.com_0.indexeddb.leveldb/013336.log 
+2026/06/05-01:56:31.478 371c Compacting 1@2 + 10@3 files
+2026/06/05-01:56:31.532 371c Generated table #13361@2: 81224 keys, 2230775 bytes
+2026/06/05-01:56:31.589 371c Generated table #13362@2: 95832 keys, 2248786 bytes
+2026/06/05-01:56:31.648 371c Generated table #13363@2: 96081 keys, 2249764 bytes
+2026/06/05-01:56:31.706 371c Generated table #13364@2: 96066 keys, 2248858 bytes
+2026/06/05-01:56:31.764 371c Generated table #13365@2: 97294 keys, 2249739 bytes
+2026/06/05-01:56:31.822 371c Generated table #13366@2: 101479 keys, 2254632 bytes
+2026/06/05-01:56:31.881 371c Generated table #13367@2: 101261 keys, 2254858 bytes
+2026/06/05-01:56:31.940 371c Generated table #13368@2: 101152 keys, 2254052 bytes
+2026/06/05-01:56:32.001 371c Generated table #13369@2: 85250 keys, 2514035 bytes
+2026/06/05-01:56:32.046 371c Generated table #13370@2: 29125 keys, 2249400 bytes
+2026/06/05-01:56:32.046 371c Compacted 1@2 + 10@3 files => 22754899 bytes
+2026/06/05-01:56:32.049 371c compacted to: files[ 0 2 41 36 0 0 0 ]
+2026/06/05-01:56:32.050 371c Delete type=2 #13333
+2026/06/05-01:56:32.050 371c Delete type=2 #13334
+2026/06/05-01:56:32.050 371c Delete type=2 #13335
+2026/06/05-01:56:32.050 371c Delete type=2 #13338
+2026/06/05-01:56:32.050 371c Delete type=2 #13339
+2026/06/05-01:56:32.050 371c Delete type=2 #13340
+2026/06/05-01:56:32.050 371c Delete type=2 #13341
+2026/06/05-01:56:32.050 371c Delete type=2 #13342
+2026/06/05-01:56:32.050 371c Delete type=2 #13343
+2026/06/05-01:56:32.051 371c Delete type=2 #13344
+2026/06/05-01:56:32.051 371c Delete type=2 #13348
+2026/06/05-01:56:32.296 371c Compacting 1@2 + 2@3 files
+2026/06/05-01:56:32.365 371c Generated table #13371@2: 59386 keys, 2227511 bytes
+2026/06/05-01:56:32.398 371c Generated table #13372@2: 16408 keys, 2166863 bytes
+2026/06/05-01:56:32.400 371c Generated table #13373@2: 7 keys, 5731 bytes
+2026/06/05-01:56:32.400 371c Compacted 1@2 + 2@3 files => 4400105 bytes
+2026/06/05-01:56:32.402 371c compacted to: files[ 0 2 40 37 0 0 0 ]
+2026/06/05-01:56:35.819 371c Compacting 1@1 + 2@2 files
+2026/06/05-01:56:35.868 371c Generated table #13374@1: 50473 keys, 2200901 bytes
+2026/06/05-01:56:35.878 371c Generated table #13375@1: 2031 keys, 484250 bytes
+2026/06/05-01:56:35.878 371c Compacted 1@1 + 2@2 files => 2685151 bytes
+2026/06/05-01:56:35.879 371c compacted to: files[ 0 1 40 37 0 0 0 ]
+2026/06/05-01:56:35.879 371c Delete type=2 #13315
+2026/06/05-01:56:35.879 371c Delete type=2 #13316
+2026/06/05-01:56:35.879 371c Delete type=2 #13349
