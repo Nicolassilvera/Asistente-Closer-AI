@@ -123,7 +123,7 @@ def main():
             def __init__(self, tts, stt):
                 self.tts      = tts
                 self.stt      = stt
-                self.detector = WakeWordDetector(on_detected=self._on_wake)
+                self.detector = WakeWordDetector(on_detected=self._on_wake, wake_word="eren")
                 self._active  = True
                 self._lock    = threading.Lock()
                 self._busy    = False

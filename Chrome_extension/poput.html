@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      width: 220px;
+      padding: 16px;
+      font-family: system-ui, sans-serif;
+      background: #0f0f13;
+      color: #e2e0f0;
+    }
+    .header { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: #6b7280; }
+    .dot.active { background: #1d9e75; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+    h3 { margin: 0; font-size: 14px; }
+    p { margin: 0; font-size: 11px; color: #8884a8; }
+    .url { font-size: 10px; color: #8884a8; margin-top: 8px;
+           overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    button {
+      margin-top: 12px; width: 100%; padding: 8px;
+      background: #7c6ff7; border: none; border-radius: 6px;
+      color: white; font-size: 12px; cursor: pointer;
+    }
+    button:hover { background: #6b5ee6; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="dot" id="dot"></div>
+    <div>
+      <h3>Jarvis Observer</h3>
+      <p id="status">Verificando...</p>
+    </div>
+  </div>
+  <div class="url" id="url">—</div>
+  <button id="btn">Enviar contexto ahora</button>
+
+  <script src="popup.js"></script>
+</body>
+</html>

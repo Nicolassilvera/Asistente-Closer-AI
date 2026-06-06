@@ -10,9 +10,7 @@ console = Console()
 
 # Palabras que activan a Jarvis además del wake word
 ACTIVATION_WORDS = [
-    "subaru", "jarvis", "jarvi", "jarbes", "harvey", "harvis", "yarbis", "sharvis" # variantes fonéticas
-    "asistente", "che jarvis", "oye jarvis", "hola jarvis",
-    "necesito ayuda", "jarvis estás",
+    "Eren", "Eren", "Eren.", "Eren!", "Eren?",  #
 ]
 
 class VoiceController:

@@ -16,6 +16,7 @@ class Config:
     LOG_PATH         = "logs/jarvis.log"
     MAX_TASK_RETRIES = 3
     MICROPHONE_INDEX = int(os.getenv("MICROPHONE_INDEX", "0"))
+    WAKE_WORD_THRESHOLD = int(os.getenv("WAKE_WORD_THRESHOLD", "300"))
 
     def validate(self):
         if not any([self.GROQ_API_KEY, self.GEMINI_API_KEY, self.OPENAI_API_KEY]):

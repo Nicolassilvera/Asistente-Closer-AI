@@ -60,13 +60,11 @@ class TTSEngine:
         elif self._fallback:
             self._speak_pyttsx3(text, blocking)
 
-    #-->
-
     def _speak_elevenlabs(self, text: str, blocking: bool):
         try:
             import pygame
             from elevenlabs import VoiceSettings
-    
+
             audio = self._client.text_to_speech.convert(
                 voice_id=self._voice_id or "pNInz6obpgDQGcFmaJgB",
                 text=text,
@@ -78,27 +76,22 @@ class TTSEngine:
                     use_speaker_boost=True
                 )
             )
-    
+
             if not pygame.mixer.get_init():
                 pygame.mixer.init()
-    
+
             audio_data = b"".join(audio)
             sound      = pygame.mixer.Sound(io.BytesIO(audio_data))
             sound.play()
-    
+
             if blocking:
                 while pygame.mixer.get_busy():
                     time.sleep(0.05)
-    
+
         except Exception as e:
             logger.warning(f"ElevenLabs error: {e}. Usando fallback.")
-            # Fallback SOLO si hay pyttsx3, sin llamar speak() de nuevo
             if self._fallback:
                 self._speak_pyttsx3(text, blocking)
-            # Si no hay fallback, ya se mostró en consola desde speak()
-            # NO llamar speak() de nuevo — eso causaba la duplicación
-
-    #-->
 
     def _speak_pyttsx3(self, text: str, blocking: bool):
         try:
@@ -126,10 +119,10 @@ class STTEngine:
 
     def __init__(self):
         self.recognizer = sr.Recognizer()
-        self.recognizer.dynamic_energy_threshold         = True
+        self.recognizer.dynamic_energy_threshold          = True
         self.recognizer.dynamic_energy_adjustment_damping = 0.15
-        self.recognizer.pause_threshold                  = 1.5
-        self.recognizer.operation_timeout                = None
+        self.recognizer.pause_threshold                   = 1.5
+        self.recognizer.operation_timeout                 = None
         logger.info("STT: SpeechRecognition listo.")
 
     def listen(self, timeout: int = 8, phrase_limit: int = 30) -> str:
@@ -164,68 +157,79 @@ class STTEngine:
 
 class WakeWordDetector:
     """
-    Detecta la palabra 'Jarvis' usando openWakeWord.
-    Corre en background — llama al callback cuando detecta la wake word.
+    Detecta la palabra de activación por STT continuo.
+    Acepta cualquier palabra — no depende de modelos externos.
     """
 
-    def __init__(self, on_detected: callable):
+    def __init__(self, on_detected: callable, wake_word: str = "eren"):
         self.on_detected  = on_detected
+        self.wake_word    = wake_word.lower()
         self._running     = False
         self._thread      = None
-        self._sensitivity = 0.3
 
     def start(self):
         self._running = True
         self._thread  = threading.Thread(target=self._loop, daemon=True)
         self._thread.start()
-        logger.info("Wake word detector iniciado — escuchando 'Jarvis'")
+        logger.info(f"Wake word detector iniciado — escuchando '{self.wake_word}'")
 
     def stop(self):
         self._running = False
         logger.info("Wake word detector detenido.")
 
     def _loop(self):
+        from src.core.config import config
+
+        recognizer = sr.Recognizer()
+        recognizer.energy_threshold         = getattr(config, 'WAKE_WORD_THRESHOLD', 500)
+        recognizer.dynamic_energy_threshold = False
+        recognizer.pause_threshold          = 0.8
+
+        device_index = config.MICROPHONE_INDEX if config.MICROPHONE_INDEX > 0 else None
+
+        wake_variants = [
+            self.wake_word, "Eren", "Eren.", "Eren!", "Eren?",  # variantes de activación   
+            "eren",  
+        ]
+
+        logger.info(f"Wake word: escuchando '{self.wake_word}' — umbral: {recognizer.energy_threshold}")
+
+        # Abrir micrófono UNA sola vez — no cerrar y abrir en cada loop
         try:
-            from openwakeword.model import Model
-            import pyaudio
+            mic = sr.Microphone(device_index=device_index)
+            with mic as source:
+                logger.info("Wake word: micrófono abierto en modo continuo.")
+                while self._running:
+                    try:
+                        audio = recognizer.listen(
+                            source,
+                            timeout=2,
+                            phrase_time_limit=2
+                        )
+                        text = recognizer.recognize_google(
+                            audio, language="es-AR"
+                        ).lower().strip()
 
-            model = Model(
-                wakeword_models=["hey_jarvis_v0.1"],
-                inference_framework="onnx"
-            )
+                        if not text:
+                            continue
 
-            audio  = pyaudio.PyAudio()
-            stream = audio.open(
-                format=pyaudio.paInt16,
-                channels=1,
-                rate=16000,
-                input=True,
-                frames_per_buffer=1280
-            )
+                        logger.debug(f"Wake loop: '{text}'")
 
-            logger.info("Wake word: stream de audio iniciado. Decí 'Jarvis' para activar.")
-
-            while self._running:
-                try:
-                    chunk      = stream.read(1280, exception_on_overflow=False)
-                    audio_data = np.frombuffer(chunk, dtype=np.int16)
-                    prediction = model.predict(audio_data)
-
-                    for name, score in prediction.items():
-                        if score > self._sensitivity:
-                            logger.info(f"Wake word detectada: {name} (score: {score:.2f})")
+                        if any(w in text for w in wake_variants):
+                            logger.info(f"Wake word detectada: '{text}'")
                             self.on_detected()
-                            time.sleep(1.5)  # cooldown
-                            break
+                            time.sleep(2)
 
-                except Exception as e:
-                    logger.debug(f"Wake word loop error: {e}")
-                    time.sleep(0.1)
-
-            stream.stop_stream()
-            stream.close()
-            audio.terminate()
+                    except sr.WaitTimeoutError:
+                        pass
+                    except sr.UnknownValueError:
+                        pass
+                    except sr.RequestError as e:
+                        logger.warning(f"STT error: {e}")
+                        time.sleep(3)
+                    except Exception as e:
+                        logger.debug(f"Wake loop error: {e}")
+                        time.sleep(0.5)
 
         except Exception as e:
             logger.error(f"Wake word detector falló: {e}")
-            logger.info("Continuando sin wake word — usá 'escuchar' para activar el micrófono.")

@@ -1,3 +1,6 @@
-2026/06/05-17:13:20.137 3398 Reusing MANIFEST E:\Jarvis Emprendedor\jarvis\data\browser_sessions\edge_profile\Default\Local Storage\leveldb/MANIFEST-000001
-2026/06/05-17:13:20.143 3398 Recovering log #58
-2026/06/05-17:13:20.145 3398 Reusing old log E:\Jarvis Emprendedor\jarvis\data\browser_sessions\edge_profile\Default\Local Storage\leveldb/000058.log 
+2026/06/06-12:15:31.899 2444 Reusing MANIFEST E:\Jarvis Emprendedor\jarvis\data\browser_sessions\edge_profile\Default\Local Storage\leveldb/MANIFEST-000001
+2026/06/06-12:15:31.905 2444 Recovering log #70
+2026/06/06-12:15:31.906 2444 Reusing old log E:\Jarvis Emprendedor\jarvis\data\browser_sessions\edge_profile\Default\Local Storage\leveldb/000070.log 
+2026/06/06-12:18:59.230 31b8 Level-0 table #74: started
+2026/06/06-12:18:59.235 31b8 Level-0 table #74: 99804 bytes OK
+2026/06/06-12:18:59.237 31b8 Delete type=0 #70

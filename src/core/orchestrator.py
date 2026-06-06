@@ -9,6 +9,8 @@ from src.core.logger import logger
 from src.core.exceptions import JarvisError, GPTQuotaError
 from src.core.personality import say
 from src.core.task_executor import TaskExecutor
+import requests
+ctx = requests.get("http://localhost:8000/api/browser/context").json()
 
 console = Console()
 

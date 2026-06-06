@@ -1,8 +1,9 @@
 # src/api/main.py
 import asyncio
 import json
+import uuid as _uuid
 from datetime import datetime
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -234,6 +235,78 @@ async def approve_message(conv_id: str):
         return {"message": "Mensaje aprobado"}
     except DatabaseError as e:
         raise HTTPException(500, e.message)
+
+# ── BROWSER / EXTENSION API ───────────────────────────────────────────────────
+# Estado en memoria — la extensión lo actualiza cada 3 segundos
+_browser_tabs: list  = []
+_commands:     dict  = {}   # cmd_id → {id, type, params, status, result}
+
+class _TabInventory(BaseModel):
+    tabs: list[dict]
+
+class _BrowserCommand(BaseModel):
+    id:        Optional[str]  = None
+    type:      str
+    tab_id:    Optional[int]  = None
+    window_id: Optional[int]  = None
+    url:       Optional[str]  = None
+    action:    Optional[str]  = None
+    params:    Optional[dict] = None
+
+@app.post("/api/browser/tabs")
+def browser_update_tabs(payload: _TabInventory):
+    global _browser_tabs
+    _browser_tabs = payload.tabs
+    return {"ok": True}
+
+@app.get("/api/browser/tabs")
+def browser_get_tabs():
+    return {"tabs": _browser_tabs}
+
+@app.post("/api/browser/command")
+def browser_queue_command(cmd: _BrowserCommand):
+    cmd_id = str(_uuid.uuid4())
+    _commands[cmd_id] = {
+        "id":        cmd_id,
+        "type":      cmd.type,
+        "tab_id":    cmd.tab_id,
+        "window_id": cmd.window_id,
+        "url":       cmd.url,
+        "action":    cmd.action,
+        "params":    cmd.params or {},
+        "status":    "pending",
+        "result":    None,
+    }
+    # Limpiar comandos viejos (> 200 entradas)
+    if len(_commands) > 200:
+        oldest = list(_commands.keys())[:50]
+        for k in oldest:
+            _commands.pop(k, None)
+    return {"id": cmd_id}
+
+@app.get("/api/browser/commands/pending")
+def browser_get_pending():
+    pending = [c for c in _commands.values() if c["status"] == "pending"]
+    for c in pending:
+        c["status"] = "running"
+    return pending
+
+@app.get("/api/browser/commands/{cmd_id}/result")
+def browser_get_result(cmd_id: str):
+    cmd = _commands.get(cmd_id)
+    if not cmd:
+        raise HTTPException(404, "Comando no encontrado")
+    return {"status": cmd["status"], "result": cmd.get("result")}
+
+@app.post("/api/browser/commands/{cmd_id}/result")
+async def browser_post_result(cmd_id: str, request: Request):
+    data = await request.json()
+    cmd  = _commands.get(cmd_id)
+    if not cmd:
+        raise HTTPException(404, "Comando no encontrado")
+    cmd["status"] = "done"
+    cmd["result"] = data
+    return {"ok": True}
 
 # ── FRONTEND ──────────────────────────────────────────────────────────────────
 FRONTEND_BUILD = os.path.join(os.path.dirname(__file__), "../../ui/dist")

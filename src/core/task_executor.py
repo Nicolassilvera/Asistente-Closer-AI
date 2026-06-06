@@ -22,9 +22,6 @@ PLATFORM_KEYWORDS = {
     "facebook":  ["facebook", "face", "fb"],
 }
 
-MODO_FOCO_KEYWORDS = [
-    "Modo ventas"
-]
 
 class TaskExecutor:
     def __init__(self):
@@ -54,10 +51,6 @@ class TaskExecutor:
                 return platform
         return None
 
-    def _is_modo_foco(self, text: str) -> bool:
-        text_lower = str(text).lower()
-        return any(k in text_lower for k in MODO_FOCO_KEYWORDS)
-
     def execute(self, action_type: str, params: dict) -> str:
         # Spotify no necesita navegador
         if action_type == "spotify":
@@ -66,41 +59,49 @@ class TaskExecutor:
         # Construir texto completo para detección
         all_text = f"{action_type} {json.dumps(params, ensure_ascii=False)}".lower()
 
-        # ── Modo Foco — intercepción ANTES de todo ────────────────────────
-        if self._is_modo_foco(all_text):
-            if not self._started:
-                self.start()
-            return self._handle_modo_foco()
-
         # ── Intercepción por plataforma ───────────────────────────────────
         platform = self._detect_platform(all_text)
 
         if platform == "whatsapp":
-            if not self._started:
-                self.start()
             contact = self._extract_contact(params)
             message = self._extract_message(params)
-            if contact and message:
-                return self._handle_whatsapp({**params, "action": "send_message"})
-            return self._handle_whatsapp({"action": "open"})
+            if action_type == "whatsapp" or (contact and message):
+                if not self._started:
+                    self.start()
+                if contact and message:
+                    return self._handle_whatsapp({**params, "action": "send_message"})
+                return self._handle_whatsapp({"action": "get_unread"})
+            # Solo abrir URL → browser del usuario
+            import webbrowser
+            webbrowser.open_new_tab(PLATFORM_URLS["whatsapp"])
+            logger.info("WhatsApp Web abierto en browser del usuario")
+            return "WhatsApp Web abierto"
 
         if platform in ("messenger", "marketplace"):
-            if not self._started:
-                self.start()
             contact = self._extract_contact(params)
             message = self._extract_message(params)
-            if contact and message:
-                return self._handle_messenger({
-                    **params,
-                    "marketplace": True,
-                    "action": "send_message"
-                })
-            return self._handle_messenger({"action": "get_pending", "marketplace": True})
+            # Interacción real (enviar/leer) → Playwright
+            if action_type == "messenger" or (contact and message):
+                if not self._started:
+                    self.start()
+                if contact and message:
+                    return self._handle_messenger({
+                        **params,
+                        "marketplace": True,
+                        "action": "send_message"
+                    })
+                return self._handle_messenger({"action": "get_pending", "marketplace": True})
+            # Solo abrir → browser del usuario, sin Playwright
+            import webbrowser
+            webbrowser.open_new_tab(PLATFORM_URLS["messenger"])
+            logger.info("Messenger Marketplace abierto en browser del usuario")
+            return "Messenger Marketplace abierto"
 
         if platform == "facebook":
-            if not self._started:
-                self.start()
-            return self._handle_facebook({"action": "open_marketplace"})
+            import webbrowser
+            webbrowser.open_new_tab(PLATFORM_URLS["facebook"])
+            logger.info("Facebook Marketplace abierto en browser del usuario")
+            return "Facebook Marketplace abierto"
 
         # ── Resto normal ──────────────────────────────────────────────────
         if not self._started:
@@ -128,57 +129,6 @@ class TaskExecutor:
 
     # ── Handlers ──────────────────────────────────────────────────────────
 
-    def _handle_modo_foco(self) -> str:
-        from rich.console import Console
-        console = Console()
-        console.print("[yellow]Activando Modo Trabajo...[/yellow]")
-
-        WORK_MODE = [
-            ("WhatsApp",  "https://web.whatsapp.com"),
-            ("Messenger", "https://www.messenger.com/marketplace"),
-            ("Facebook",  "https://www.facebook.com/marketplace"),
-        ]
-
-        ctx = self.browser._context
-        resultados = []
-        pages = {}
-
-        for nombre, url in WORK_MODE:
-            try:
-                # Verificar si ya está abierta
-                for existing_page in ctx.pages:
-                    if url.split("/")[2] in existing_page.url:
-                        existing_page.bring_to_front()
-                        pages[nombre] = existing_page
-                        resultados.append(f"{nombre} ✓ (ya abierta)")
-                        break
-                else:
-                    # Crear pestaña nueva e independiente
-                    page = ctx.new_page()
-                    page.goto(url, wait_until="domcontentloaded", timeout=30000)
-                    pages[nombre] = page
-                    resultados.append(f"{nombre} ✓")
-                    logger.info(f"Modo Trabajo: {nombre} abierto en nueva pestaña")
-
-                time.sleep(1)
-
-            except Exception as e:
-                resultados.append(f"{nombre} ✗")
-                logger.warning(f"Modo Trabajo: {nombre} falló: {e}")
-
-        # Mantener referencia a la primera pestaña útil
-        if pages:
-            first = list(pages.values())[0]
-            try:
-                self.browser._page = first
-                first.bring_to_front()
-            except Exception:
-                pass
-
-        resumen = "Modo Trabajo activado: " + " | ".join(resultados)
-        console.print(f"[green]{resumen}[/green]")
-        return resumen
-
     def _handle_browser(self, params: dict) -> str:
         url      = params.get("url", "")
         platform = params.get("platform", "").lower()
@@ -188,22 +138,13 @@ class TaskExecutor:
         if platform == "spotify" or (song and "spotify" in str(params).lower()):
             return self._handle_spotify(params)
 
-        # WhatsApp — siempre módulo web
-        if "whatsapp" in url.lower() or "whatsapp" in platform:
-            return self._handle_whatsapp({"action": "open"})
-
-        # Messenger — siempre marketplace
-        if "messenger" in url.lower() or "messenger" in platform:
-            return self._handle_messenger({"action": "get_pending", "marketplace": True})
-
-        # Facebook — marketplace
-        if "facebook" in url.lower() and "marketplace" not in url.lower():
-            return self._handle_facebook({"action": "open_marketplace"})
-
         if not url:
             raise TaskExecutionError("abrir navegador", "Falta el parámetro 'url'")
 
-        self.browser.navigate(url)
+        # Siempre abrir en el browser del usuario — sin Playwright
+        import webbrowser
+        webbrowser.open_new_tab(url)
+        logger.info(f"URL abierta en browser del usuario: {url}")
         return f"Página abierta: {url}"
 
     def _handle_spotify(self, params: dict) -> str:
@@ -254,53 +195,32 @@ class TaskExecutor:
             raise TaskExecutionError("abrir Spotify", str(e))
 
     def _handle_whatsapp(self, params: dict) -> str:
-        action  = params.get("action", "send_message")
+        action = params.get("action", "send_message")
+
+        if action == "open":
+            import webbrowser
+            webbrowser.open_new_tab(PLATFORM_URLS["whatsapp"])
+            logger.info("WhatsApp Web abierto en browser del usuario")
+            return "WhatsApp Web abierto"
+
         contact = self._extract_contact(params)
         message = self._extract_message(params)
 
-        ctx = self.browser._context
-        current_url = ""
-        try:
-            current_url = self.browser._page.url
-        except Exception:
-            pass
-
-        if "web.whatsapp.com" not in current_url:
-            # Buscar si ya existe una pestaña con WhatsApp
-            wa_page = None
-            try:
-                for p in ctx.pages:
-                    if "web.whatsapp.com" in p.url:
-                        wa_page = p
-                        break
-            except Exception:
-                pass
-
-            if wa_page:
-                wa_page.bring_to_front()
-                self.browser._page = wa_page
-            else:
-                # Abrir en nueva pestaña si ya hay otras
-                try:
-                    pages = ctx.pages
-                    if len(pages) > 1 or (len(pages) == 1 and pages[0].url not in ("about:blank", "")):
-                        new_page = ctx.new_page()
-                        self.browser._page = new_page
-                except Exception:
-                    pass
-                self.whatsapp.open()
-
-        if action == "open":
-            return "WhatsApp Web abierto"
-
-        elif action in ("send_message", ""):
+        if action in ("send_message", ""):
             if not contact or not message:
                 raise TaskExecutionError(
                     "enviar WhatsApp",
                     f"No encontré contacto o mensaje en: {params}"
                 )
+            # Navegar a WhatsApp en el browser de Playwright si no está ya ahí
+            try:
+                if "web.whatsapp.com" not in self.browser.page.url:
+                    self.whatsapp.open()
+            except Exception:
+                self.whatsapp.open()
             self.whatsapp.send_message(contact, message)
-            return f"Mensaje enviado a {contact}"
+            logger.info(f"WhatsApp: mensaje enviado a {contact}")
+            return f"Mensaje enviado a {contact} por WhatsApp"
 
         elif action == "get_unread":
             chats = self.whatsapp.get_unread_chats()
@@ -309,17 +229,22 @@ class TaskExecutor:
         raise TaskExecutionError("WhatsApp", f"Acción desconocida: {action}")
 
     def _handle_facebook(self, params: dict) -> str:
+        import subprocess
         action = params.get("action", "open_marketplace")
 
         if action == "open_marketplace":
-            self.facebook.open_marketplace()
-            return "Marketplace abierto"
-        elif action == "open_inbox":
-            self.facebook.open_inbox()
-            return "Inbox abierto"
+            # Abrir en nueva pestaña del Edge existente
+            subprocess.Popen([
+                "cmd", "/c", "start", "msedge",
+                "--new-tab", "https://www.facebook.com/marketplace"
+            ])
+            logger.info("Facebook Marketplace abierto en nueva pestaña")
+            return "Facebook Marketplace abierto"
+
         elif action == "get_messages":
             msgs = self.facebook.get_unread_messages()
             return f"{len(msgs)} mensajes no leídos"
+
         elif action == "send_message":
             url = params.get("conversation_url", "")
             msg = params.get("message", "")
@@ -327,19 +252,23 @@ class TaskExecutor:
                 raise TaskExecutionError("enviar mensaje FB", "Faltan url o message")
             self.facebook.send_message(url, msg)
             return "Mensaje enviado"
-        elif action == "search":
-            query   = params.get("query", "")
-            results = self.facebook.search_marketplace(query)
-            return f"{len(results)} resultados"
 
         raise TaskExecutionError("Facebook", f"Acción desconocida: {action}")
 
     def _handle_messenger(self, params: dict) -> str:
         action  = params.get("action", "get_pending")
+
+        # Solo abrir → browser del usuario, sin Playwright
+        if action in ("open", "open_marketplace"):
+            import webbrowser
+            webbrowser.open_new_tab(PLATFORM_URLS["messenger"])
+            logger.info("Messenger Marketplace abierto en browser del usuario")
+            return "Messenger Marketplace abierto"
+
         contact = self._extract_contact(params)
         message = self._extract_message(params)
 
-        # Verificar si Messenger ya está abierto en alguna pestaña
+        # Para lectura/envío → Playwright
         ctx = self.browser._context
         current_url = ""
         try:
@@ -397,11 +326,7 @@ class TaskExecutor:
             except Exception:
                 pass
 
-        # ... resto igual que antes
-        if action in ("open", "open_marketplace"):
-            return "Messenger Marketplace abierto"
-
-        elif action in ("get_pending", "summarize", "get_conversations",
+        if action in ("get_pending", "summarize", "get_conversations",
                         "get_chats", "get_messages"):
             summary = self.messenger.summarize_marketplace(self.executor_gpt)
             from rich.console import Console
@@ -438,17 +363,17 @@ class TaskExecutor:
 
         app_lower = app.lower()
 
-        # Modo foco
-        if self._is_modo_foco(app_lower):
-            return self._handle_modo_foco()
-
-        # Plataformas
+        # Plataformas — siempre abrir en browser del usuario
+        import webbrowser
         if "whatsapp" in app_lower:
-            return self._handle_whatsapp({"action": "open"})
+            webbrowser.open_new_tab(PLATFORM_URLS["whatsapp"])
+            return "WhatsApp Web abierto"
         if "messenger" in app_lower or "marketplace" in app_lower:
-            return self._handle_messenger({"action": "get_pending", "marketplace": True})
+            webbrowser.open_new_tab(PLATFORM_URLS["messenger"])
+            return "Messenger Marketplace abierto"
         if "facebook" in app_lower or "face" in app_lower:
-            return self._handle_facebook({"action": "open_marketplace"})
+            webbrowser.open_new_tab(PLATFORM_URLS["facebook"])
+            return "Facebook Marketplace abierto"
         if "spotify" in app_lower:
             return self._handle_spotify({"query": "música"})
 
@@ -476,11 +401,6 @@ class TaskExecutor:
             ""
         )
         mode = params.get("mode", "")
-
-        # Verificar modo foco en TODO el contenido del params
-        all_text = f"{action} {message} {mode} {json.dumps(params)}".lower()
-        if self._is_modo_foco(all_text):
-            return self._handle_modo_foco()
 
         if message:
             from rich.console import Console

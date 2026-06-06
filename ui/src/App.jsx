@@ -4,6 +4,8 @@ import { LayoutDashboard, Users, Bell, Settings, Zap } from 'lucide-react'
 import { useWebSocket } from './hooks/useWebSocket'
 import Dashboard from './pages/Dashboard'
 import Leads from './pages/Leads'
+import Seguimientos from './pages/Seguimientos'
+
 
 const NAV = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -65,9 +67,7 @@ export default function App() {
       <main className="flex-1 overflow-y-auto">
         {page === 'dashboard' && <Dashboard />}
         {page === 'leads'     && <Leads />}
-        {page === 'followups' && (
-          <div className="p-6 text-jarvis-muted">Seguimientos — próximamente</div>
-        )}
+        {page === 'followups' && <Seguimientos />}
         {page === 'settings'  && (
           <div className="p-6 text-jarvis-muted">Ajustes — próximamente</div>
         )}
