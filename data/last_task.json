@@ -1,13 +1,10 @@
 {
-  "intent": "enviar mensaje a Isa",
+  "intent": "informar sobre tarea completada",
   "tasks": [
     {
-      "description": "enviar mensaje a Isa por whatsapp",
-      "action_type": "whatsapp",
-      "params": {
-        "contacto": "Isa",
-        "mensaje": "en un ratito estoy ahi"
-      }
+      "description": "ya está resuelto",
+      "action_type": "system",
+      "params": {}
     }
   ],
   "platform": ""

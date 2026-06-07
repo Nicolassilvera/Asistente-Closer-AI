@@ -12,27 +12,46 @@ from src.core.exceptions import JarvisError
 class VoiceError(JarvisError):
     pass
 
+#-->
+
 class TTSEngine:
-    """Text-to-Speech con ElevenLabs (natural) y pyttsx3 como fallback offline."""
+    """Text-to-Speech: Edge TTS (principal) → ElevenLabs → pyttsx3 fallback."""
 
     def __init__(self):
         self._elevenlabs_key = os.getenv("ELEVENLABS_API_KEY")
         self._voice_id       = os.getenv("ELEVENLABS_VOICE_ID", "")
+        self._edge_voice     = os.getenv("EDGE_TTS_VOICE", "es-MX-JorgeNeural")
         self._fallback       = None
         self._ready          = False
+        self._provider       = None
         self._init()
 
     def _init(self):
+        # Prioridad 1: Edge TTS
+        try:
+            import edge_tts
+            import pygame
+            pygame.mixer.init()
+            self._ready    = True
+            self._provider = "edge_tts"
+            logger.info(f"TTS: Edge TTS listo — voz: {self._edge_voice}")
+            return
+        except Exception as e:
+            logger.warning(f"Edge TTS no disponible: {e}")
+
+        # Prioridad 2: ElevenLabs
         if self._elevenlabs_key:
             try:
                 from elevenlabs.client import ElevenLabs
-                self._client = ElevenLabs(api_key=self._elevenlabs_key)
-                self._ready  = True
+                self._client   = ElevenLabs(api_key=self._elevenlabs_key)
+                self._ready    = True
+                self._provider = "elevenlabs"
                 logger.info("TTS: ElevenLabs listo.")
                 return
             except Exception as e:
-                logger.warning(f"ElevenLabs no disponible: {e}. Usando fallback.")
+                logger.warning(f"ElevenLabs no disponible: {e}")
 
+        # Prioridad 3: pyttsx3 offline
         try:
             import pyttsx3
             self._fallback = pyttsx3.init()
@@ -42,7 +61,8 @@ class TTSEngine:
                 if "spanish" in v.name.lower() or "es" in v.id.lower():
                     self._fallback.setProperty("voice", v.id)
                     break
-            self._ready = True
+            self._ready    = True
+            self._provider = "pyttsx3"
             logger.info("TTS: pyttsx3 fallback listo.")
         except Exception as e:
             logger.error(f"TTS no disponible: {e}")
@@ -53,12 +73,64 @@ class TTSEngine:
             Console().print(f"[yellow]Jarvis:[/yellow] {text}")
             return
 
-        logger.debug(f"TTS: {text[:60]}...")
+        logger.debug(f"TTS [{self._provider}]: {text[:60]}...")
 
-        if self._elevenlabs_key and hasattr(self, "_client"):
+        if self._provider == "edge_tts":
+            self._speak_edge(text, blocking)
+        elif self._provider == "elevenlabs":
             self._speak_elevenlabs(text, blocking)
-        elif self._fallback:
+        elif self._provider == "pyttsx3":
             self._speak_pyttsx3(text, blocking)
+
+    #-->
+
+    def _speak_edge(self, text: str, blocking: bool):
+        import asyncio
+        import edge_tts
+        import pygame
+        import io
+
+        async def _generate():
+            tts        = edge_tts.Communicate(text, voice=self._edge_voice)
+            audio_data = b""
+            async for chunk in tts.stream():
+                if chunk["type"] == "audio":
+                    audio_data += chunk["data"]
+            return audio_data
+
+        def _play():
+            try:
+                # Crear loop completamente aislado en este hilo
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                try:
+                    audio_data = loop.run_until_complete(_generate())
+                finally:
+                    loop.close()
+                    asyncio.set_event_loop(None)
+
+                if pygame.mixer.get_init():
+                    pygame.mixer.quit()
+                pygame.mixer.init(frequency=44100, size=-16, channels=2, buffer=512)
+
+                sound = pygame.mixer.Sound(io.BytesIO(audio_data))
+                sound.play()
+
+                while pygame.mixer.get_busy():
+                    time.sleep(0.05)
+
+            except Exception as e:
+                logger.warning(f"Edge TTS error: {e}")
+                if self._fallback:
+                    self._speak_pyttsx3(text, blocking)
+
+        # Siempre en hilo dedicado para aislar asyncio de Playwright u otros loops
+        t = threading.Thread(target=_play, daemon=True)
+        t.start()
+        if blocking:
+            t.join()
+
+    #-->
 
     def _speak_elevenlabs(self, text: str, blocking: bool):
         try:
@@ -113,6 +185,7 @@ class TTSEngine:
         except Exception:
             pass
 
+#-->
 
 class STTEngine:
     """Speech-to-Text con SpeechRecognition + Google."""
@@ -179,22 +252,25 @@ class WakeWordDetector:
 
     def _loop(self):
         from src.core.config import config
-
+    
         recognizer = sr.Recognizer()
-        recognizer.energy_threshold         = getattr(config, 'WAKE_WORD_THRESHOLD', 500)
-        recognizer.dynamic_energy_threshold = False
-        recognizer.pause_threshold          = 0.8
-
+        recognizer.energy_threshold          = getattr(config, 'WAKE_WORD_THRESHOLD', 500)
+        recognizer.dynamic_energy_threshold  = False
+        recognizer.pause_threshold           = 0.8
+    
         device_index = config.MICROPHONE_INDEX if config.MICROPHONE_INDEX > 0 else None
-
+    
         wake_variants = [
-            self.wake_word, "Eren", "Eren.", "Eren!", "Eren?",  # variantes de activación   
-            "eren",  
+            # Eren y variantes fonéticas
+            "eren", "eron", "aaron", "aron", "iron", "erren",
+            "aren", "erin", "airón", "herren",
+            # Activadores alternativos
+            "buenas", "buen día", "buenos días", "hey",
+            "hola", "oye", "escucha", "atención",
         ]
-
+    
         logger.info(f"Wake word: escuchando '{self.wake_word}' — umbral: {recognizer.energy_threshold}")
-
-        # Abrir micrófono UNA sola vez — no cerrar y abrir en cada loop
+    
         try:
             mic = sr.Microphone(device_index=device_index)
             with mic as source:
@@ -209,17 +285,32 @@ class WakeWordDetector:
                         text = recognizer.recognize_google(
                             audio, language="es-AR"
                         ).lower().strip()
-
+    
                         if not text:
                             continue
-
+                        
                         logger.debug(f"Wake loop: '{text}'")
-
-                        if any(w in text for w in wake_variants):
+    
+                        # Detección por palabra completa o texto exacto
+                        words    = text.split()
+                        detected = False
+    
+                        for w in wake_variants:
+                            if w == text.strip():          # texto exacto
+                                detected = True
+                                break
+                            if w in words:                 # palabra completa
+                                detected = True
+                                break
+                            if len(w) > 5 and w in text:   # substring solo para palabras largas
+                                detected = True
+                                break
+                            
+                        if detected:
                             logger.info(f"Wake word detectada: '{text}'")
                             self.on_detected()
                             time.sleep(2)
-
+    
                     except sr.WaitTimeoutError:
                         pass
                     except sr.UnknownValueError:
@@ -230,6 +321,7 @@ class WakeWordDetector:
                     except Exception as e:
                         logger.debug(f"Wake loop error: {e}")
                         time.sleep(0.5)
-
+    
         except Exception as e:
             logger.error(f"Wake word detector falló: {e}")
+

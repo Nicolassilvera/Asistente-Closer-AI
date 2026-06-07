@@ -5,7 +5,7 @@ import time
 import queue
 import threading
 from rich.console import Console
-from rich.prompt import Prompt, Confirm
+from rich.prompt import Prompt
 from rich.table import Table
 from src.core.config import config
 from src.core.database import init_db
@@ -61,9 +61,13 @@ def open_crm():
     try:
         subprocess.Popen(["cmd", "/c", "start", "msedge",
                           "--new-window", "http://localhost:8000"])
+        time.sleep(0.8)
+        subprocess.Popen(["cmd", "/c", "start", "msedge",
+                          "--new-tab", "http://localhost:5173"])
     except Exception:
         import webbrowser
         webbrowser.open("http://localhost:8000")
+        webbrowser.open_new_tab("http://localhost:5173")
 
 # Flag global — bloquea el wake word durante confirmaciones
 _confirming = False
@@ -105,6 +109,74 @@ def main():
         console.print(f"\n[bold red]Error al iniciar:[/bold red] {e.message}\n")
         api_proc.terminate()
         sys.exit(1)
+
+    # ── Monitor de WhatsApp ───────────────────────────────────────────────
+    from src.modules.whatsapp_monitor import WhatsAppMonitor
+    wa_monitor = WhatsAppMonitor(
+        browser          = orchestrator.executor.browser,
+        gpt_engine       = orchestrator.gpt,
+        interval_minutes = 5,
+    )
+
+    def _start_monitor():
+        time.sleep(30)  # esperar que el usuario abra WhatsApp
+        try:
+            wa_monitor.start()
+        except Exception as e:
+            logger.warning(f"WhatsApp Monitor no pudo iniciar: {e}")
+
+    threading.Thread(target=_start_monitor, daemon=True).start()
+
+    # ── Tareas WhatsApp desde el CRM ─────────────────────────────────────
+    # Un único hilo worker persistente — Playwright no es thread-safe;
+    # todas las operaciones deben ocurrir en el mismo hilo que lo creó.
+    _crm_task_queue = queue.Queue()
+
+    def _crm_worker():
+        """Hilo único que procesa todas las tareas CRM con Playwright."""
+        import requests as _req
+        while True:
+            task = _crm_task_queue.get()   # bloquea hasta que llegue una tarea
+            console.print(
+                f"\n[purple]CRM → Jarvis:[/purple] "
+                f"enviando WhatsApp a [bold]{task['contact']}[/bold]..."
+            )
+            try:
+                orchestrator.executor.execute("whatsapp", {
+                    "action":   "send_message",
+                    "contacto": task["contact"],
+                    "mensaje":  task["message"],
+                })
+                _req.post(
+                    f"http://localhost:8000/api/whatsapp/tasks/{task['id']}/result",
+                    json={"success": True}, timeout=2,
+                )
+                console.print(
+                    f"[green]✓ Mensaje enviado a {task['contact']} por WhatsApp[/green]\n"
+                )
+            except Exception as e:
+                _req.post(
+                    f"http://localhost:8000/api/whatsapp/tasks/{task['id']}/result",
+                    json={"success": False, "error": str(e)}, timeout=2,
+                )
+                console.print(f"[red]✗ Error enviando a {task['contact']}: {e}[/red]\n")
+
+    threading.Thread(target=_crm_worker, daemon=True, name="crm-wa-worker").start()
+
+    def _poll_crm_wa_tasks():
+        """Polling liviano — solo encola tareas, no usa Playwright."""
+        import requests as _req
+        while True:
+            time.sleep(3)
+            try:
+                r = _req.get("http://localhost:8000/api/whatsapp/tasks/pending", timeout=1)
+                if r.ok:
+                    for task in r.json():
+                        _crm_task_queue.put(task)
+            except Exception:
+                pass
+
+    threading.Thread(target=_poll_crm_wa_tasks, daemon=True, name="crm-wa-poll").start()
 
     # ── Motor de voz ──────────────────────────────────────────────────────
     tts        = None
@@ -225,19 +297,13 @@ def main():
                 source, user_input = instruction_queue.get_nowait()
                 via_voice = (source == "voice")
             except queue.Empty:
-                # No hay instrucciones de voz — leer del teclado con timeout
-                # Usamos un input con timeout para no bloquear la cola
-                import select
                 user_input = None
                 via_voice  = False
 
-                # En Windows no hay select para stdin, usamos prompt normal
                 try:
                     console.print("[purple]Vos:[/purple] ", end="")
-                    # Timeout de 0.5s para no bloquear — revisamos la cola frecuentemente
                     import msvcrt
                     chars = []
-                    start = time.time()
                     while True:
                         # Revisar cola de voz mientras esperamos input
                         try:

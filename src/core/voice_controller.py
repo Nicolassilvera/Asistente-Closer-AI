@@ -10,7 +10,7 @@ console = Console()
 
 # Palabras que activan a Jarvis además del wake word
 ACTIVATION_WORDS = [
-    "Eren", "Eren", "Eren.", "Eren!", "Eren?",  #
+    "Eren", "Eren", "Eren.", "Eren!", "Eren?", "Buenas buenas", "buenas"  #
 ]
 
 class VoiceController:

@@ -1,7 +1,8 @@
 // ui/src/pages/LeadDetail.jsx
+import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft, Phone, MessageCircle, Star, Calendar, Clock } from 'lucide-react'
-import { getLead, getEvents, getConversations, updateStatus } from '../api'
+import { getLead, getEvents, getConversations, updateStatus, prospectLead, sendWhatsAppViaJarvis } from '../api'
 import StatusBadge from '../components/StatusBadge'
 
 const ESTADOS = [
@@ -20,6 +21,24 @@ const EVENT_ICONS = {
 
 export default function LeadDetail({ leadId, onBack }) {
   const qc = useQueryClient()
+
+  const [draftMsg,   setDraftMsg]   = useState('')
+  const [showDraft,  setShowDraft]  = useState(false)
+  const [drafting,   setDrafting]   = useState(false)
+  const [sending,    setSending]    = useState(false)
+  const [sentOk,     setSentOk]     = useState(false)
+
+  const handleProspect = async () => {
+    setDrafting(true)
+    try {
+      const data = await prospectLead(leadId)
+      setDraftMsg(data.message)
+      setShowDraft(true)
+    } catch (e) {
+      console.error(e)
+    }
+    setDrafting(false)
+  }
 
   const { data: lead, isLoading } = useQuery({
     queryKey: ['lead', leadId],
@@ -178,6 +197,14 @@ export default function LeadDetail({ leadId, onBack }) {
               </p>
             </div>
           )}
+
+          {/* Prospección */}
+          <button onClick={handleProspect} disabled={drafting}
+            className="w-full px-4 py-2.5 bg-jarvis-purple/20 hover:bg-jarvis-purple/30
+                       border border-jarvis-purple/40 rounded-xl text-sm text-jarvis-purple
+                       font-medium transition-colors disabled:opacity-50">
+            {drafting ? 'Generando...' : '✉ Generar mensaje de prospección'}
+          </button>
         </div>
 
         {/* Columna derecha — historial */}
@@ -249,6 +276,65 @@ export default function LeadDetail({ leadId, onBack }) {
 
         </div>
       </div>
+
+      {/* Toast confirmación envío */}
+      {sentOk && (
+        <div className="fixed bottom-6 right-6 z-50 bg-green-500/20 border border-green-500/40
+                        rounded-xl px-5 py-3 text-green-400 text-sm font-medium shadow-lg"
+          onClick={() => setSentOk(false)}>
+          Jarvis está enviando el mensaje por WhatsApp
+        </div>
+      )}
+
+      {/* Modal borrador de prospección */}
+      {showDraft && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-jarvis-card border border-jarvis-border rounded-xl
+                          w-full max-w-lg p-5 space-y-4">
+            <h3 className="font-medium text-jarvis-text">Mensaje generado por Jarvis</h3>
+            <textarea
+              value={draftMsg}
+              onChange={e => setDraftMsg(e.target.value)}
+              rows={6}
+              className="w-full px-3 py-2 bg-jarvis-surface border border-jarvis-border
+                         rounded-lg text-sm text-jarvis-text focus:outline-none
+                         focus:border-jarvis-purple resize-none"
+            />
+            <div className="flex gap-3">
+              <button onClick={() => setShowDraft(false)}
+                className="flex-1 px-4 py-2 border border-jarvis-border rounded-lg
+                           text-sm text-jarvis-muted hover:bg-jarvis-surface transition-colors">
+                Cerrar
+              </button>
+              <button onClick={() => { navigator.clipboard.writeText(draftMsg); setShowDraft(false) }}
+                className="flex-1 px-4 py-2 bg-jarvis-teal/20 border border-jarvis-teal/40
+                           rounded-lg text-sm text-teal-400 font-medium transition-colors">
+                Copiar
+              </button>
+              <button
+                onClick={async () => {
+                  // Priorizar número de WhatsApp del lead (permite envío sin contacto guardado)
+                  const contact = lead.whatsapp || lead.contact_name || lead.company_name
+                  setSending(true)
+                  try {
+                    await sendWhatsAppViaJarvis(contact, draftMsg, leadId)
+                    setSentOk(true)
+                    setShowDraft(false)
+                  } catch (e) {
+                    console.error(e)
+                  }
+                  setSending(false)
+                }}
+                disabled={sending}
+                className="flex-1 px-4 py-2 bg-green-500/20 border border-green-500/40
+                           rounded-lg text-sm text-green-400 font-medium transition-colors
+                           disabled:opacity-50">
+                {sending ? 'Enviando...' : '🤖 Enviar con Jarvis'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

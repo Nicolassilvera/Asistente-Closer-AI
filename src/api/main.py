@@ -236,6 +236,86 @@ async def approve_message(conv_id: str):
     except DatabaseError as e:
         raise HTTPException(500, e.message)
 
+# ── PROSPECCIÓN ───────────────────────────────────────────────────────────────
+class ProspectRequest(BaseModel):
+    lead_id:         str
+    product_context: Optional[str] = "balanzas industriales y comerciales"
+
+@app.post("/api/leads/{lead_id}/prospect")
+async def prospect_lead(lead_id: str, data: ProspectRequest):
+    try:
+        lead = leads_repo.get_by_id(lead_id)
+        if not lead:
+            raise HTTPException(404, "Lead no encontrado")
+
+        from src.modules.message_agent import MessageAgent
+        from src.core.gpt_engine import GPTEngine
+
+        agent   = MessageAgent(GPTEngine())
+        message = agent.draft_outbound(
+            company_name    = lead["company_name"],
+            category        = lead.get("category", ""),
+            city            = lead.get("city", ""),
+            contact_name    = lead.get("contact_name", ""),
+            product_context = data.product_context,
+        )
+
+        events_repo.log(
+            lead_id,
+            "mensaje_generado",
+            "Mensaje de prospección generado por Jarvis",
+            "jarvis",
+        )
+
+        return {"message": message, "lead": lead}
+
+    except DatabaseError as e:
+        raise HTTPException(500, e.message)
+
+# ── COLA DE TAREAS WHATSAPP (CRM → Jarvis) ────────────────────────────────────
+_wa_tasks: dict = {}
+
+class _WaSendRequest(BaseModel):
+    contact: str
+    message: str
+    lead_id: Optional[str] = None
+
+@app.post("/api/whatsapp/send")
+def wa_queue_send(data: _WaSendRequest):
+    task_id = str(_uuid.uuid4())
+    _wa_tasks[task_id] = {
+        "id":      task_id,
+        "contact": data.contact,
+        "message": data.message,
+        "lead_id": data.lead_id,
+        "status":  "pending",
+    }
+    return {"id": task_id, "status": "queued"}
+
+@app.get("/api/whatsapp/tasks/pending")
+def wa_get_pending():
+    pending = [t for t in _wa_tasks.values() if t["status"] == "pending"]
+    for t in pending:
+        t["status"] = "running"
+    return pending
+
+@app.post("/api/whatsapp/tasks/{task_id}/result")
+async def wa_task_result(task_id: str, request: Request):
+    data = await request.json()
+    task = _wa_tasks.get(task_id)
+    if not task:
+        raise HTTPException(404, "Tarea no encontrada")
+    task["status"] = "done"
+    task["result"] = data
+    return {"ok": True}
+
+@app.get("/api/whatsapp/tasks/{task_id}")
+def wa_get_task(task_id: str):
+    task = _wa_tasks.get(task_id)
+    if not task:
+        raise HTTPException(404, "Tarea no encontrada")
+    return task
+
 # ── BROWSER / EXTENSION API ───────────────────────────────────────────────────
 # Estado en memoria — la extensión lo actualiza cada 3 segundos
 _browser_tabs: list  = []
@@ -309,6 +389,31 @@ async def browser_post_result(cmd_id: str, request: Request):
     return {"ok": True}
 
 # ── FRONTEND ──────────────────────────────────────────────────────────────────
+
+# ── BROWSER CONTEXT ───────────────────────────────────────────────────────────
+from pydantic import BaseModel as PydanticBase
+
+class BrowserContext(PydanticBase):
+    url:          str
+    title:        str
+    visible_text: Optional[str] = ""
+    html:         Optional[str] = ""
+
+_browser_context: dict = {}
+
+@app.post("/api/browser/context")
+async def receive_context(data: BrowserContext):
+    global _browser_context
+    _browser_context = data.model_dump()
+    _browser_context["updated_at"] = datetime.now().isoformat()
+    await manager.broadcast("browser_context", _browser_context)
+    return {"status": "ok"}
+
+@app.get("/api/browser/context")
+def get_context():
+    return _browser_context or {"url": "", "title": "", "visible_text": ""}
+
+#--
 FRONTEND_BUILD = os.path.join(os.path.dirname(__file__), "../../ui/dist")
 
 if os.path.exists(FRONTEND_BUILD):

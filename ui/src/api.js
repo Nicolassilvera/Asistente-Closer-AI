@@ -45,6 +45,17 @@ export const saveMessage = (leadId, data) =>
 export const approveMessage = (convId) =>
   api.patch(`/conversations/${convId}/approve`).then(r => r.data)
 
+// ── Prospección ────────────────────────────────────────
+export const prospectLead = (leadId, productContext) =>
+  api.post(`/leads/${leadId}/prospect`, {
+    lead_id:         leadId,
+    product_context: productContext,
+  }).then(r => r.data)
+
+// ── WhatsApp via Jarvis ────────────────────────────────
+export const sendWhatsAppViaJarvis = (contact, message, leadId) =>
+  api.post('/whatsapp/send', { contact, message, lead_id: leadId }).then(r => r.data)
+
 // ── WebSocket ──────────────────────────────────────────
 export function connectWS(onMessage) {
   const ws = new WebSocket('ws://localhost:8000/ws')

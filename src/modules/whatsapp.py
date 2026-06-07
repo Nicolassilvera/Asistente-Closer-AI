@@ -1,10 +1,28 @@
 # src/modules/whatsapp.py
+import re
 import time
 from src.core.browser import BrowserEngine
 from src.core.logger import logger
 from src.core.exceptions import BrowserError
 
 WHATSAPP_URL = "https://web.whatsapp.com"
+
+def _looks_like_phone(text: str) -> bool:
+    """True si text parece número de teléfono (≥6 dígitos, sin letras)."""
+    digits = re.sub(r'[\s\+\-\(\)]', '', text)
+    return digits.isdigit() and len(digits) >= 6
+
+def _normalize_phone_ar(phone: str) -> str:
+    """
+    Normaliza número argentino al formato internacional E.164 (sin +).
+    Ej: '1140591621' → '541140591621', '011-4059-1621' → '541140591621'
+    """
+    d = re.sub(r'\D', '', phone)
+    if d.startswith('54'):
+        return d
+    if d.startswith('0'):
+        d = d[1:]   # quitar 0 de discado local
+    return '54' + d
 
 class WhatsAppModule:
     def __init__(self, browser: BrowserEngine):
@@ -59,57 +77,104 @@ class WhatsAppModule:
 #-------
 
     def send_message(self, contact_name: str, message: str) -> bool:
+        """
+        Envía un mensaje de WhatsApp.
+        Si contact_name parece un número de teléfono, abre el chat directamente
+        por URL (sin necesitar que el número esté en contactos).
+        """
+        logger.info(f"Enviando mensaje a {contact_name}...")
         try:
-            logger.info(f"Enviando mensaje a {contact_name}...")
-    
-            # Selector real detectado en WhatsApp Web en español
-            search_box = '[aria-label="Buscar un chat o iniciar uno nuevo"]'
-            
-            self.browser.wait_for(search_box, timeout=15000)
-            self.browser.click(search_box)
-    
-            # Limpiar y escribir el nombre
-            self.browser.page.keyboard.press("Control+A")
-            self.browser.page.keyboard.press("Delete")
-            self.browser.type_text(search_box, contact_name, delay=80)
-            time.sleep(2)
-    
-            # Intentar contacto exacto por título
-            result_selector = f'span[title="{contact_name}"]'
-            try:
-                self.browser.wait_for(result_selector, timeout=5000)
-                self.browser.click(result_selector)
-            except BrowserError:
-                # Tomar el primer resultado de la lista
-                first = '[aria-label="Lista de resultados de búsqueda."] [role="listitem"]'
-                try:
-                    self.browser.wait_for(first, timeout=5000)
-                    self.browser.page.query_selector(first).click()
-                except Exception:
-                    # Último fallback — primer item genérico
-                    self.browser.page.keyboard.press("Enter")
-    
-            time.sleep(1.5)
-    
-            # Campo de escritura del chat
-            msg_box = '[aria-label="Escribe un mensaje"]'
-            try:
-                self.browser.wait_for(msg_box, timeout=10000)
-            except BrowserError:
-                # Fallback selector alternativo
-                msg_box = '[contenteditable="true"][data-tab="10"]'
-                self.browser.wait_for(msg_box, timeout=5000)
-    
-            self.browser.type_text(msg_box, message, delay=60)
-            self.browser.page.keyboard.press("Enter")
-    
-            logger.info(f"Mensaje enviado a {contact_name}.")
-            return True
-    
+            if _looks_like_phone(contact_name):
+                return self._send_by_phone(_normalize_phone_ar(contact_name), message)
+            return self._send_by_name(contact_name, message)
         except BrowserError:
             raise
         except Exception as e:
             raise BrowserError(f"enviar mensaje a {contact_name}", str(e))
+
+    def _send_by_phone(self, phone_e164: str, message: str) -> bool:
+        """Abre el chat por número E.164 sin necesitar el contacto guardado."""
+        url = f"https://web.whatsapp.com/send?phone={phone_e164}"
+        logger.info(f"WhatsApp: navegando a chat directo → {url}")
+        self.browser.navigate(url)
+        return self._type_and_send(message, phone_e164)
+
+    def _send_by_name(self, contact_name: str, message: str) -> bool:
+        """Busca el contacto por nombre en la barra de búsqueda."""
+        # Selectores de búsqueda (probados en WhatsApp Web es/en 2024-2025)
+        search_selectors = [
+            '[data-testid="chat-list-search"]',
+            '[aria-label="Buscar un chat o iniciar uno nuevo"]',
+            '[aria-label="Search or start new chat"]',
+        ]
+        search_box = None
+        for sel in search_selectors:
+            try:
+                self.browser.wait_for(sel, timeout=4000)
+                search_box = sel
+                break
+            except BrowserError:
+                continue
+
+        if not search_box:
+            raise BrowserError(f"enviar mensaje a {contact_name}",
+                               "No se encontró la barra de búsqueda de WhatsApp")
+
+        self.browser.click(search_box)
+        self.browser.page.keyboard.press("Control+A")
+        self.browser.page.keyboard.press("Delete")
+        self.browser.type_text(search_box, contact_name, delay=80)
+        time.sleep(2)
+
+        # Intentar click en resultado exacto o primer resultado
+        result_selectors = [
+            f'span[title="{contact_name}"]',
+            '[data-testid="cell-frame-container"]',
+            '[aria-label="Lista de resultados de búsqueda."] [role="listitem"]',
+            '[role="listitem"]',
+        ]
+        clicked = False
+        for sel in result_selectors:
+            try:
+                self.browser.wait_for(sel, timeout=3000)
+                self.browser.page.query_selector(sel).click()
+                clicked = True
+                break
+            except Exception:
+                continue
+
+        if not clicked:
+            self.browser.page.keyboard.press("Enter")
+
+        return self._type_and_send(message, contact_name)
+
+    def _type_and_send(self, message: str, label: str = "") -> bool:
+        """Espera el campo de mensaje, escribe y envía con Enter."""
+        time.sleep(1)
+        msg_selectors = [
+            '[data-testid="conversation-compose-box-input"]',
+            '[aria-label="Escribe un mensaje"]',
+            '[aria-label="Type a message"]',
+            'div[contenteditable="true"][data-tab="10"]',
+        ]
+        msg_box = None
+        for sel in msg_selectors:
+            try:
+                self.browser.wait_for(sel, timeout=8000)
+                msg_box = sel
+                break
+            except BrowserError:
+                continue
+
+        if not msg_box:
+            raise BrowserError(f"enviar mensaje a {label}",
+                               "No se encontró el campo de mensaje de WhatsApp")
+
+        self.browser.type_text(msg_box, message, delay=60)
+        time.sleep(0.3)
+        self.browser.page.keyboard.press("Enter")
+        logger.info(f"Mensaje enviado a {label}.")
+        return True
 
 #-------
 

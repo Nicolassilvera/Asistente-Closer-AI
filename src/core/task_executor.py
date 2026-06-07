@@ -65,13 +65,12 @@ class TaskExecutor:
         if platform == "whatsapp":
             contact = self._extract_contact(params)
             message = self._extract_message(params)
-            if action_type == "whatsapp" or (contact and message):
+            if contact and message:
+                # Enviar mensaje → requiere Playwright
                 if not self._started:
                     self.start()
-                if contact and message:
-                    return self._handle_whatsapp({**params, "action": "send_message"})
-                return self._handle_whatsapp({"action": "get_unread"})
-            # Solo abrir URL → browser del usuario
+                return self._handle_whatsapp({**params, "action": "send_message"})
+            # Solo abrir (sin contacto o mensaje) → browser del usuario, sin Playwright
             import webbrowser
             webbrowser.open_new_tab(PLATFORM_URLS["whatsapp"])
             logger.info("WhatsApp Web abierto en browser del usuario")
