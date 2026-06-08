@@ -1,22 +1,58 @@
 // ui/src/App.jsx
 import { useState } from 'react'
-import { LayoutDashboard, Users, Bell, Settings, SearchCheck, Scale, Bot } from 'lucide-react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { LayoutDashboard, Users, Bell, Settings as SettingsIcon, SearchCheck, Scale, Bot, Power,
+         MessageSquareText, CalendarDays } from 'lucide-react'
 import { useWebSocket } from './hooks/useWebSocket'
+import { getMonitorStatus, toggleMonitor, getStats, getSettings } from './api'
 import Dashboard from './pages/Dashboard'
 import Leads from './pages/Leads'
 import Seguimientos from './pages/Seguimientos'
 import LeadFinder from './pages/LeadFinder'
+import Chat from './pages/Chat'
+import Pizarron from './pages/Pizarron'
+import Settings from './pages/Settings'
 
 const NAV = [
   { id: 'dashboard', label: 'Dashboard',    icon: LayoutDashboard },
   { id: 'leads',     label: 'Leads',        icon: Users },
   { id: 'finder',    label: 'LeadFinder',   icon: SearchCheck },
   { id: 'followups', label: 'Seguimientos', icon: Bell },
+  { id: 'chat',      label: 'Asistente IA', icon: MessageSquareText },
+  { id: 'pizarron',  label: 'Pizarrón',     icon: CalendarDays },
 ]
 
 export default function App() {
   const [page, setPage] = useState('dashboard')
   useWebSocket()
+
+  const queryClient = useQueryClient()
+  const { data: monitorData } = useQuery({
+    queryKey: ['monitor-status'],
+    queryFn: getMonitorStatus,
+    refetchInterval: 15000,
+  })
+  const monitorOn    = monitorData?.enabled ?? true
+
+  const { data: stats } = useQuery({
+    queryKey: ['stats'],
+    queryFn:  getStats,
+    refetchInterval: 30000,
+  })
+  const followupBadge = stats?.followups ?? 0
+
+  const { data: appSettings } = useQuery({
+    queryKey: ['settings'],
+    queryFn:  getSettings,
+    staleTime: 60000,
+  })
+
+  const toggleMutation = useMutation({
+    mutationFn: toggleMonitor,
+    onSuccess: (data) => {
+      queryClient.setQueryData(['monitor-status'], data)
+    },
+  })
 
   return (
     <div className="flex h-screen bg-jarvis-bg overflow-hidden">
@@ -32,7 +68,7 @@ export default function App() {
             </div>
             <div className="min-w-0">
               <div className="font-heading font-bold text-sm text-jarvis-text leading-tight truncate">
-                Balanzas Caballito
+                {appSettings?.company_name ?? 'Jarvis CRM'}
               </div>
               <div className="text-[10px] text-[#FF8C00] uppercase tracking-widest font-medium mt-0.5">
                 CRM
@@ -54,7 +90,13 @@ export default function App() {
                            : 'text-jarvis-muted hover:bg-jarvis-card hover:text-jarvis-text border border-transparent font-medium'
                          }`}>
               <Icon size={16} className="flex-shrink-0" />
-              {label}
+              <span className="flex-1">{label}</span>
+              {id === 'followups' && followupBadge > 0 && (
+                <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-amber-500 text-white
+                                 text-[10px] font-bold flex items-center justify-center flex-shrink-0">
+                  {followupBadge > 99 ? '99+' : followupBadge}
+                </span>
+              )}
             </button>
           ))}
 
@@ -70,13 +112,42 @@ export default function App() {
                          ? 'bg-[#FF8C00]/15 text-[#FF8C00] font-semibold border border-[#FF8C00]/25'
                          : 'text-jarvis-muted hover:bg-jarvis-card hover:text-jarvis-text border border-transparent font-medium'
                        }`}>
-            <Settings size={16} className="flex-shrink-0" />
+            <SettingsIcon size={16} className="flex-shrink-0" />
             Ajustes
           </button>
         </nav>
 
         {/* Footer */}
-        <div className="px-4 py-3 border-t border-jarvis-border">
+        <div className="px-4 py-3 border-t border-jarvis-border space-y-2.5">
+
+          {/* Toggle monitor WhatsApp */}
+          <button
+            onClick={() => toggleMutation.mutate()}
+            disabled={toggleMutation.isPending}
+            title={monitorOn ? 'Pausar seguimiento en vivo' : 'Activar seguimiento en vivo'}
+            className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg border transition-all
+                        ${monitorOn
+                          ? 'bg-teal-500/10 border-teal-500/25 text-teal-400 hover:bg-teal-500/20'
+                          : 'bg-jarvis-surface border-jarvis-border text-jarvis-muted hover:border-jarvis-border/80 hover:text-jarvis-text'
+                        }`}>
+            <Power size={13} className="flex-shrink-0" />
+            <div className="flex-1 text-left min-w-0">
+              <div className="text-[11px] font-semibold truncate">
+                {monitorOn ? 'Seguimiento en vivo' : 'Seguimiento pausado'}
+              </div>
+              <div className="text-[9px] opacity-60 mt-0.5">
+                {monitorOn ? 'WA monitoreado c/5 min' : 'Toca para reactivar'}
+              </div>
+            </div>
+            {/* Pill on/off */}
+            <div className={`w-7 h-3.5 rounded-full flex-shrink-0 transition-colors relative
+                            ${monitorOn ? 'bg-teal-500' : 'bg-jarvis-border'}`}>
+              <span className={`absolute top-0.5 w-2.5 h-2.5 rounded-full bg-white shadow transition-all
+                               ${monitorOn ? 'left-[14px]' : 'left-0.5'}`} />
+            </div>
+          </button>
+
+          {/* Jarvis status */}
           <div className="flex items-center gap-2.5">
             <div className="relative">
               <Bot size={16} className="text-jarvis-muted" />
@@ -93,12 +164,9 @@ export default function App() {
         {page === 'leads'     && <Leads />}
         {page === 'finder'    && <LeadFinder />}
         {page === 'followups' && <Seguimientos />}
-        {page === 'settings'  && (
-          <div className="p-8 text-jarvis-muted">
-            <p className="font-heading font-bold text-jarvis-text text-lg">Ajustes</p>
-            <p className="text-sm mt-1">Próximamente</p>
-          </div>
-        )}
+        {page === 'chat'      && <Chat />}
+        {page === 'pizarron'  && <Pizarron />}
+        {page === 'settings'  && <Settings />}
       </main>
     </div>
   )

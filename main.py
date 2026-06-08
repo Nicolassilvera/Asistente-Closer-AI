@@ -1,6 +1,11 @@
 # main.py
 import sys
 import os
+
+# Cuando corre como .exe: trabajar desde el directorio del ejecutable
+if getattr(sys, 'frozen', False):
+    os.chdir(os.path.dirname(sys.executable))
+
 import time
 import queue
 import threading
@@ -48,6 +53,38 @@ def smoke_test():
 
 def run_api_server():
     import subprocess
+
+    if getattr(sys, 'frozen', False):
+        # Modo .exe — uvicorn corre en un thread (no como subprocess)
+        import uvicorn
+        import threading
+        from src.api.main import app as _app
+        def _run():
+            uvicorn.run(_app, host="0.0.0.0", port=8000, log_level="warning")
+        t = threading.Thread(target=_run, daemon=True, name="uvicorn")
+        t.start()
+        time.sleep(2)  # darle tiempo a levantar
+        return t
+
+    # Modo desarrollo — matar proceso previo en 8000 y arrancar subprocess
+    try:
+        result = subprocess.run(
+            ["netstat", "-ano"],
+            capture_output=True, text=True, timeout=5
+        )
+        for line in result.stdout.splitlines():
+            if ":8000" in line and "LISTENING" in line:
+                parts = line.split()
+                pid = int(parts[-1])
+                if pid and pid != os.getpid():
+                    subprocess.run(["taskkill", "/F", "/PID", str(pid)],
+                                   capture_output=True, timeout=5)
+                    logger.info(f"Proceso previo en puerto 8000 terminado (PID {pid})")
+                    time.sleep(1)
+                    break
+    except Exception:
+        pass
+
     proc = subprocess.Popen(
         [sys.executable, "-m", "uvicorn", "src.api.main:app",
          "--host", "0.0.0.0", "--port", "8000", "--log-level", "warning"],
@@ -58,16 +95,19 @@ def run_api_server():
 def open_crm():
     import subprocess
     time.sleep(2.5)
+    frozen = getattr(sys, 'frozen', False)
     try:
         subprocess.Popen(["cmd", "/c", "start", "msedge",
                           "--new-window", "http://localhost:8000"])
-        time.sleep(0.8)
-        subprocess.Popen(["cmd", "/c", "start", "msedge",
-                          "--new-tab", "http://localhost:5173"])
+        if not frozen:
+            time.sleep(0.8)
+            subprocess.Popen(["cmd", "/c", "start", "msedge",
+                              "--new-tab", "http://localhost:5173"])
     except Exception:
         import webbrowser
         webbrowser.open("http://localhost:8000")
-        webbrowser.open_new_tab("http://localhost:5173")
+        if not frozen:
+            webbrowser.open_new_tab("http://localhost:5173")
 
 # Flag global — bloquea el wake word durante confirmaciones
 _confirming = False
@@ -365,10 +405,11 @@ def main():
 
     if voice_ctrl:
         voice_ctrl.stop()
-    try:
-        api_proc.terminate()
-    except Exception:
-        pass
+    if hasattr(api_proc, 'terminate'):
+        try:
+            api_proc.terminate()
+        except Exception:
+            pass
 
 if __name__ == "__main__":
     main()

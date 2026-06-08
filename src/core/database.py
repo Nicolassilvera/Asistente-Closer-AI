@@ -116,7 +116,78 @@ def init_db():
                 CREATE INDEX IF NOT EXISTS idx_tasks_session
                     ON tasks(session_id);
 
+                CREATE TABLE IF NOT EXISTS settings (
+                    key   TEXT PRIMARY KEY,
+                    value TEXT NOT NULL
+                );
+
+                CREATE TABLE IF NOT EXISTS chat_sessions (
+                    id         TEXT PRIMARY KEY,
+                    title      TEXT DEFAULT 'Nueva conversación',
+                    created_at TEXT NOT NULL
+                );
+
+                CREATE TABLE IF NOT EXISTS chat_messages (
+                    id         TEXT PRIMARY KEY,
+                    session_id TEXT NOT NULL,
+                    role       TEXT NOT NULL,
+                    content    TEXT NOT NULL,
+                    created_at TEXT NOT NULL,
+                    FOREIGN KEY (session_id) REFERENCES chat_sessions(id) ON DELETE CASCADE
+                );
+
+                CREATE TABLE IF NOT EXISTS calendar_events (
+                    id         TEXT PRIMARY KEY,
+                    title      TEXT NOT NULL,
+                    date       TEXT NOT NULL,
+                    type       TEXT DEFAULT 'tarea',
+                    notes      TEXT,
+                    created_at TEXT NOT NULL
+                );
+
+                CREATE TABLE IF NOT EXISTS postits (
+                    id         TEXT PRIMARY KEY,
+                    content    TEXT NOT NULL,
+                    color      TEXT DEFAULT 'orange',
+                    sort_order INTEGER DEFAULT 0,
+                    created_at TEXT NOT NULL
+                );
+
+                CREATE TABLE IF NOT EXISTS sales (
+                    id             TEXT PRIMARY KEY,
+                    date           TEXT NOT NULL,
+                    client         TEXT,
+                    product        TEXT,
+                    quantity       INTEGER DEFAULT 1,
+                    price          REAL    DEFAULT 0,
+                    profit         REAL    DEFAULT 0,
+                    payment_method TEXT    DEFAULT 'efectivo',
+                    notes          TEXT,
+                    created_at     TEXT NOT NULL
+                );
+                CREATE INDEX IF NOT EXISTS idx_sales_date ON sales(date);
+
             """)
+        # Migraciones — agregan columnas sin perder datos existentes
+        migrations = [
+            "ALTER TABLE calendar_events ADD COLUMN product TEXT",
+            "ALTER TABLE calendar_events ADD COLUMN quantity INTEGER DEFAULT 1",
+            "ALTER TABLE calendar_events ADD COLUMN delivery_type TEXT",
+            "ALTER TABLE calendar_events ADD COLUMN detail TEXT",
+            "ALTER TABLE calendar_events ADD COLUMN contact TEXT",
+            "ALTER TABLE calendar_events ADD COLUMN completed INTEGER DEFAULT 0",
+            "ALTER TABLE calendar_events ADD COLUMN wa_sent INTEGER DEFAULT 0",
+            "ALTER TABLE calendar_events ADD COLUMN price REAL DEFAULT 0",
+            "ALTER TABLE calendar_events ADD COLUMN profit REAL DEFAULT 0",
+            "ALTER TABLE calendar_events ADD COLUMN payment_method TEXT DEFAULT 'efectivo'",
+        ]
+        for sql in migrations:
+            try:
+                with get_connection() as conn:
+                    conn.execute(sql)
+            except Exception:
+                pass  # columna ya existe
+
         logger.info("Base de datos inicializada correctamente.")
     except DatabaseError:
         raise

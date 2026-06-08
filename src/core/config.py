@@ -1,8 +1,14 @@
 import os
+import sys
 from dotenv import load_dotenv
 from src.core.exceptions import ConfigError
 
-load_dotenv()
+if getattr(sys, 'frozen', False):
+    _base = os.path.dirname(sys.executable)
+    load_dotenv(os.path.join(_base, '.env'))
+else:
+    _base = os.getcwd()
+    load_dotenv()
 
 class Config:
     GROQ_API_KEY   = os.getenv("GROQ_API_KEY")
@@ -12,8 +18,8 @@ class Config:
     OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
     APP_NAME         = os.getenv("APP_NAME", "Jarvis")
     DEBUG            = os.getenv("DEBUG", "false").lower() == "true"
-    DB_PATH          = "data/jarvis.db"
-    LOG_PATH         = "logs/jarvis.log"
+    DB_PATH          = os.path.join(_base, "data", "jarvis.db")
+    LOG_PATH         = os.path.join(_base, "logs", "jarvis.log")
     MAX_TASK_RETRIES = 3
     MICROPHONE_INDEX = int(os.getenv("MICROPHONE_INDEX", "0"))
     WAKE_WORD_THRESHOLD = int(os.getenv("WAKE_WORD_THRESHOLD", "300"))

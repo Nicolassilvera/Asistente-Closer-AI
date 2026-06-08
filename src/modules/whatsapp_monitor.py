@@ -30,10 +30,42 @@ class WhatsAppMonitor:
         self._running = False
         logger.info("WhatsApp Monitor detenido.")
 
+    def _is_enabled(self) -> bool:
+        try:
+            from src.core.database import get_connection
+            with get_connection() as conn:
+                row = conn.execute(
+                    "SELECT value FROM settings WHERE key='monitor_enabled'"
+                ).fetchone()
+                return row is None or row[0] == '1'
+        except Exception:
+            return True
+
+    def _is_auto_followup_enabled(self) -> bool:
+        try:
+            from src.core.database import get_connection
+            with get_connection() as conn:
+                row = conn.execute(
+                    "SELECT value FROM settings WHERE key='auto_followup'"
+                ).fetchone()
+                return row is not None and row[0] == '1'
+        except Exception:
+            return False
+
     def _loop(self):
+        last_followup_day = None
         while self._running:
             try:
-                self._check_responses()
+                if self._is_enabled():
+                    self._check_responses()
+                else:
+                    logger.debug("WhatsApp Monitor pausado por el usuario.")
+
+                from datetime import date
+                today = date.today().isoformat()
+                if last_followup_day != today and self._is_auto_followup_enabled():
+                    self._auto_followup_check()
+                    last_followup_day = today
             except Exception as e:
                 logger.warning(f"WhatsApp Monitor error: {e}")
             time.sleep(self.interval)
@@ -154,3 +186,54 @@ class WhatsAppMonitor:
             )
         except Exception:
             pass
+
+    def _auto_followup_check(self):
+        """Envía WA automático a todos los leads con followup_date = hoy."""
+        from datetime import date
+        import requests
+
+        today = date.today().isoformat()
+        logger.info(f"Auto-followup: revisando leads para {today}...")
+
+        try:
+            leads = self.leads_repo.get_all(limit=99999)
+        except Exception as e:
+            logger.warning(f"Auto-followup: error al obtener leads: {e}")
+            return
+
+        pending = [
+            l for l in leads
+            if l.get("followup_date") == today
+            and l.get("lead_status") not in ("cerrado", "descartado")
+        ]
+
+        if not pending:
+            logger.debug("Auto-followup: sin leads para hoy.")
+            return
+
+        logger.info(f"Auto-followup: {len(pending)} lead(s) a contactar.")
+
+        for lead in pending:
+            contact = (lead.get("whatsapp") or lead.get("phone") or
+                       lead.get("contact_name") or lead.get("company_name", ""))
+            name    = lead.get("contact_name") or lead.get("company_name") or "ahí"
+            msg = (
+                f"Hola {name}, te escribo para hacer un seguimiento y ver cómo estás. "
+                f"Quedamos en retomar hoy — ¿tuviste oportunidad de pensar en lo que conversamos? "
+                f"Quedamos a tu disposición. Saludos."
+            )
+            try:
+                requests.post(
+                    "http://localhost:8000/api/whatsapp/send",
+                    json={"contact": contact, "message": msg, "lead_id": lead["id"]},
+                    timeout=5
+                )
+                self.events_repo.log(
+                    lead["id"],
+                    "followup_automatico",
+                    f"Seguimiento automático enviado por WhatsApp a {contact}.",
+                    "jarvis_auto"
+                )
+                logger.info(f"Auto-followup: mensaje enviado a {name} ({contact})")
+            except Exception as e:
+                logger.warning(f"Auto-followup: error enviando a {name}: {e}")

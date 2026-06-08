@@ -1,0 +1,696 @@
+
+<!doctype html>
+<html class="no-js" lang="en" dir="ltr">
+
+<head>
+
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Frigorífico Sersale</title>
+
+    <meta property="fb:app_id"            content="115780255669075" />
+    <meta name="description" content="Nos dedicamos a la producción de fiambres y embutidos de alta calidad. Jamón crudo, jamón cocido, panceta ahumada, bondiola, salame, salamines, etc.">
+
+    <meta property="og:url"                content="http://frigorificosersale.com.ar/" />
+    <meta property="og:type"               content="website" />
+    <meta property="og:title"              content="Frigorífico Sersale" />
+    <meta property="og:description"        content="Nos dedicamos a la producción de fiambres y embutidos de alta calidad." />
+    <meta property="og:image"              content="http://frigorificosersale.com.ar/img/frigorifico-sersale-jamon-crudo.jpg" />
+
+    <link rel="shortcut icon" href="img/favicon.png" type="image/x-icon" />
+
+<link rel="stylesheet" href="css/foundation.css">
+<link rel="stylesheet" href="js/swiper-3.3.1/swiper.min.css">
+<link rel="stylesheet" href="css/global.css">
+<link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="css/responsive.css">
+
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com/css?family=Lobster|Source+Sans+Pro:300,300i,400,400i,600,700" rel="stylesheet">
+<link href="fonts/fontawesome-4.7.0/font-awesome.min.css" rel="stylesheet">
+
+</head>
+
+<body class="home_pg">
+    <header class="text-center">
+
+        
+<div class="navbar-wrapper">
+
+    <div class="navbar">
+
+        <div class="title-bar" data-responsive-toggle="main-menu" data-hide-for="medium">
+            <div class="title-bar-title">Menu</div>
+            <button class="menu-icon" type="button" data-toggle="main-menu"></button>
+
+        </div>
+
+        <div class="top-bar" id="main-menu">
+
+
+                <ul class="vertical medium-horizontal menu main-menu" data-dropdown-menu>
+                    <li class="">
+                        <a href="/" title="Inicio">Inicio</a>
+                    </li>
+                    <li class="">
+                        <a href="empresa" title="Empresa">Empresa</a>
+                    </li>
+
+                    <li>
+                        <a href="productos" title="Productos">Productos</a>
+                    </li>
+                    <li>
+                        <a href="combos" title="Combos">Combos</a>
+                    </li>
+                    <li>
+                        <a href="sucursales" title="Sucursales">Sucursales</a>
+                    </li>
+                    <li class="">
+                        <a href="contacto" title="Contacto">Contacto</a>
+                    </li>
+                </ul>
+
+
+        </div>
+
+    </div>
+    <!-- /navbar -->
+
+
+</div> <!-- /navbar-wrapper -->
+
+        <div class="fullbanner">
+
+            <div id="top-slider" class="swiper-container">
+                <div class="swiper-wrapper">
+                    <div class="swiper-slide slide-1"></div>
+                    <div class="swiper-slide slide-2"></div>
+                    <div class="swiper-slide slide-3"></div>
+                    <div class="swiper-slide slide-4"></div>
+                    <div class="swiper-slide slide-5"></div>
+                </div>
+            </div>
+
+
+            <h1 class="logo"><img src="img/logo-sersale.png" alt "Frigorífico Sersale"></h1>
+            <h2 class="copy">Fiambres y embutidos<br>de alta calidad
+            </h2>
+        </div>
+        <div class="marcas">
+            <a class='img' href='/productos/frigorifico_sersale'><img src='/contents/marcas/main/1500912707_marcassersale.png' alt='Frigorífico Sersale'></a><a class='img' href='/productos/319'><img src='/contents/marcas/main/1500912757_marcas319.png' alt='319'></a><a class='img' href='/productos/1083'><img src='/contents/marcas/main/1500912790_marcas1083.png' alt='1083'></a><a class='img' href='/productos/tudor'><img src='/contents/marcas/main/1500912726_marcastudor.png' alt='Tudor'></a>        </div>
+    </header>
+
+    <section id="featured-products">
+        <div class="row">
+            <div class="large-12 columns">
+                <div class="section-title">
+                    <span class="icon"><i class="fa fa-trophy fa-fw"></i></span>
+                    <h2>Productos destacados</h2>
+                </div>
+            </div>
+        </div>
+
+        <div class="row" data-equalizer>
+            <div class="large-4 columns show-for-large" data-equalizer-watch>
+                <div class="prod-featured">
+
+                </div>
+            </div>
+            <div class="large-8 columns" data-equalizer-watch>
+
+                <div class="prod-slider-wrapper">
+                    <div id="prod-slider" class="swiper-container">
+                        <div class="swiper-wrapper">
+
+                            
+                            <div class="swiper-slide">
+                                <div class="prod-item">
+                                    <div class="prod-img">
+                                        <img src="/contents/producto/main/1500995716__mg_0521.jpg" alt="Panceta Ahumada">
+                                    </div>
+                                    <div class="prod-desc-wrapper">
+                                        <div class="prod-desc">
+
+                                            <h4>Panceta Ahumada</h4>
+                                            <table class="prod_info">
+                                                <tr>
+                                                    <td class="pr-key">
+                                                        Código
+                                                    </td>
+                                                    <td class="pr-value">
+                                                        304                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="pr-key">
+                                                        Peso aprox.
+                                                    </td>
+                                                    <td class="pr-value">
+                                                        6.000 kg.<br><span class='italic'></span>                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="pr-key">
+                                                        Vida útil
+                                                    </td>
+                                                    <td class="pr-value">
+                                                        60 días                                                    </td>
+                                                </tr>
+                                            </table>
+
+                                        </div>
+                                    </div>
+                                </div> <!-- /prod-item -->
+                            </div> <!-- /slide -->
+
+                            
+                            <div class="swiper-slide">
+                                <div class="prod-item">
+                                    <div class="prod-img">
+                                        <img src="/contents/producto/main/1500995077__mg_0540.jpg" alt="Jamón Cocido Natural Línea Sublime">
+                                    </div>
+                                    <div class="prod-desc-wrapper">
+                                        <div class="prod-desc">
+
+                                            <h4>Jamón Cocido Natural Línea Sublime</h4>
+                                            <table class="prod_info">
+                                                <tr>
+                                                    <td class="pr-key">
+                                                        Código
+                                                    </td>
+                                                    <td class="pr-value">
+                                                        604                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="pr-key">
+                                                        Peso aprox.
+                                                    </td>
+                                                    <td class="pr-value">
+                                                        6.000 kg.<br><span class='italic'></span>                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="pr-key">
+                                                        Vida útil
+                                                    </td>
+                                                    <td class="pr-value">
+                                                        60 días                                                    </td>
+                                                </tr>
+                                            </table>
+
+                                        </div>
+                                    </div>
+                                </div> <!-- /prod-item -->
+                            </div> <!-- /slide -->
+
+                            
+                            <div class="swiper-slide">
+                                <div class="prod-item">
+                                    <div class="prod-img">
+                                        <img src="/contents/producto/main/1500925614__mg_0786.jpg" alt="Lomo Suizo">
+                                    </div>
+                                    <div class="prod-desc-wrapper">
+                                        <div class="prod-desc">
+
+                                            <h4>Lomo Suizo</h4>
+                                            <table class="prod_info">
+                                                <tr>
+                                                    <td class="pr-key">
+                                                        Código
+                                                    </td>
+                                                    <td class="pr-value">
+                                                        616                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="pr-key">
+                                                        Peso aprox.
+                                                    </td>
+                                                    <td class="pr-value">
+                                                        1.500 kg.<br><span class='italic'></span>                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="pr-key">
+                                                        Vida útil
+                                                    </td>
+                                                    <td class="pr-value">
+                                                        60 días                                                    </td>
+                                                </tr>
+                                            </table>
+
+                                        </div>
+                                    </div>
+                                </div> <!-- /prod-item -->
+                            </div> <!-- /slide -->
+
+                            
+                            <div class="swiper-slide">
+                                <div class="prod-item">
+                                    <div class="prod-img">
+                                        <img src="/contents/producto/main/1500925247_303.jpg" alt="Jamón Cocido Especial">
+                                    </div>
+                                    <div class="prod-desc-wrapper">
+                                        <div class="prod-desc">
+
+                                            <h4>Jamón Cocido Especial</h4>
+                                            <table class="prod_info">
+                                                <tr>
+                                                    <td class="pr-key">
+                                                        Código
+                                                    </td>
+                                                    <td class="pr-value">
+                                                        303                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="pr-key">
+                                                        Peso aprox.
+                                                    </td>
+                                                    <td class="pr-value">
+                                                        6.000 kg.<br><span class='italic'></span>                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="pr-key">
+                                                        Vida útil
+                                                    </td>
+                                                    <td class="pr-value">
+                                                        60 días                                                    </td>
+                                                </tr>
+                                            </table>
+
+                                        </div>
+                                    </div>
+                                </div> <!-- /prod-item -->
+                            </div> <!-- /slide -->
+
+                            
+                            <div class="swiper-slide">
+                                <div class="prod-item">
+                                    <div class="prod-img">
+                                        <img src="/contents/producto/main/1500994908__mg_0806.jpg" alt="Jamón Crudo Medio Listo">
+                                    </div>
+                                    <div class="prod-desc-wrapper">
+                                        <div class="prod-desc">
+
+                                            <h4>Jamón Crudo Medio Listo</h4>
+                                            <table class="prod_info">
+                                                <tr>
+                                                    <td class="pr-key">
+                                                        Código
+                                                    </td>
+                                                    <td class="pr-value">
+                                                        107                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="pr-key">
+                                                        Peso aprox.
+                                                    </td>
+                                                    <td class="pr-value">
+                                                        2.500 kg.<br><span class='italic'></span>                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="pr-key">
+                                                        Vida útil
+                                                    </td>
+                                                    <td class="pr-value">
+                                                        90 días                                                    </td>
+                                                </tr>
+                                            </table>
+
+                                        </div>
+                                    </div>
+                                </div> <!-- /prod-item -->
+                            </div> <!-- /slide -->
+
+                            
+                            <div class="swiper-slide">
+                                <div class="prod-item">
+                                    <div class="prod-img">
+                                        <img src="/contents/producto/main/1500925077__mg_0460.jpg" alt="Jamón Cocido Especial Minipieza">
+                                    </div>
+                                    <div class="prod-desc-wrapper">
+                                        <div class="prod-desc">
+
+                                            <h4>Jamón Cocido Especial Minipieza</h4>
+                                            <table class="prod_info">
+                                                <tr>
+                                                    <td class="pr-key">
+                                                        Código
+                                                    </td>
+                                                    <td class="pr-value">
+                                                        302                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="pr-key">
+                                                        Peso aprox.
+                                                    </td>
+                                                    <td class="pr-value">
+                                                        6.000 kg.<br><span class='italic'></span>                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="pr-key">
+                                                        Vida útil
+                                                    </td>
+                                                    <td class="pr-value">
+                                                        60 días                                                    </td>
+                                                </tr>
+                                            </table>
+
+                                        </div>
+                                    </div>
+                                </div> <!-- /prod-item -->
+                            </div> <!-- /slide -->
+
+                            
+                            <div class="swiper-slide">
+                                <div class="prod-item">
+                                    <div class="prod-img">
+                                        <img src="/contents/producto/main/1500925577__mg_0792.jpg" alt="Lomo Ahumado">
+                                    </div>
+                                    <div class="prod-desc-wrapper">
+                                        <div class="prod-desc">
+
+                                            <h4>Lomo Ahumado</h4>
+                                            <table class="prod_info">
+                                                <tr>
+                                                    <td class="pr-key">
+                                                        Código
+                                                    </td>
+                                                    <td class="pr-value">
+                                                        401                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="pr-key">
+                                                        Peso aprox.
+                                                    </td>
+                                                    <td class="pr-value">
+                                                        4.500 kg.<br><span class='italic'></span>                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="pr-key">
+                                                        Vida útil
+                                                    </td>
+                                                    <td class="pr-value">
+                                                        60 días                                                    </td>
+                                                </tr>
+                                            </table>
+
+                                        </div>
+                                    </div>
+                                </div> <!-- /prod-item -->
+                            </div> <!-- /slide -->
+
+                            
+                        </div> <!-- /swiper-wrapper -->
+                    </div> <!-- /swiper-container -->
+
+                    <div class="swiper-button-prev prod-button-prev"></div>
+                    <div class="swiper-button-next prod-button-next"></div>
+
+                </div> <!-- /prod-slider-wrapper -->
+
+            </div>
+        </div>
+
+        <div class="row mt30 mb10">
+            <div class="medium-12 columns text-center">
+                <p class="fs20 italic">
+                    Todos nuestros productos son elaborados bajo estrictas normas de seguirdad e higiene.
+                </p>
+
+                <a class="btn" href="productos">Mirá todos nuestros productos</a>
+            </div>
+        </div>
+
+    </section>
+
+    <section id="combos">
+        <div class="row" data-equalizer>
+            <div class="large-3 columns show-for-large" data-equalizer-watch>
+                <div class="combo-inner">
+
+                    
+                </div>
+            </div>
+            <div class="large-6 columns" data-equalizer-watch>
+                <div class="combo-inner combo-header">
+                    <h3><img src="img/combos.png" alt="Aprovechá nuestros combos"></h3>
+                    <a href="combos" class="btn light">Descubrí más acá</a>
+                </div>
+            </div>
+            <div class="large-3 columns show-for-large" data-equalizer-watch>
+                <div class="combo-inner">
+
+                                    </div>
+            </div>
+        </div>
+    </section>
+
+    
+<section id="banners">
+    <div class="row collapse medium-uncollapse" data-equalizer>
+        <div class="medium-4 columns" data-equalizer-watch>
+
+            <div class="banner light">
+                <div class="banner-logo">
+                    <img src="img/logo-sin-tacc.png" alt="Sin T.A.C.C.">
+                </div>
+                <p class="banner-title">
+                    ¿Sabías que...?
+                </p>
+                <p>
+                    ¡Tenemos productos aptos<br><strong>para celíacos!</strong>
+                </p>
+                <div class="banner-footer">
+                    <a class="btn dark" href="contacto#form">Consultar</a>
+                </div>
+            </div>
+
+        </div>
+        <div class="medium-4 columns" data-equalizer-watch>
+
+            <div class="banner dark ferias-eventos">
+                <div class="banner-logo">
+                    <img src="img/logo-ferias-eventos.png" alt="Ferias y eventos">
+                </div>
+                <p class="banner-title">
+                    Encontrnos en:
+                </p>
+
+                <!-- Slider eventos -->
+                <div id="eventos-slider" class="swiper-container">
+                    <div class="swiper-wrapper">
+
+                        <p class='fs16 text-center' style='width:100%'>Próximamante...</p>                    </div> <!-- /swiper-wrapper -->
+
+                    <div class="swiper-button-prev evt-button-prev"></div>
+                    <div class="swiper-button-next evt-button-next"></div>
+
+                </div> <!-- /swiper-container -->
+
+
+
+
+
+                <div class="banner-footer">
+                    <a class="btn light" href="eventos-anteriores">Eventos anteriores</a>
+                </div>
+
+            </div>
+
+        </div>
+        <div class="medium-4 columns" data-equalizer-watch>
+            <div class="banner light">
+                <div class="banner-logo">
+                    <img src="img/logo-degustaciones.png" alt="Degustaciones">
+                </div>
+                <p class="banner-title">
+                    Probá nuestros productos
+                </p>
+                <p>
+                    Hacemos <strong>degustaciones</strong> en nuestras surcursales todos los sábados de 10 a 13 hs.
+                </p>
+                <div class="banner-footer">
+                    <a class="btn" href="/#sucursales">Ver sucursales</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+    <section id="ig">
+        <div class="row">
+            <div class="large-12 columns">
+                <div class="section-title">
+                    <span class="icon"><i class="fa fa-instagram fa-fw"></i></span>
+                    <h2>Seguinos en Instagram</h2>
+                    <p><strong><a class="btn" href="https://instagram.com/sersalefrigorifico" target="_blank"><i class="fa fa-instagram" style="color:white;font-size:1.3em;vertical-align:middle"></i> &nbsp;sersalefrigorifico</a></strong></p>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="medium-12 columns">
+                <!-- LightWidget WIDGET -->
+                 <script src="https://cdn.lightwidget.com/widgets/lightwidget.js"></script>
+                 <iframe src="https://cdn.lightwidget.com/widgets/b50c5933c11e5fda8821833cef66534f.html" scrolling="no" allowtransparency="true" class="lightwidget-widget" style="width:100%;border:0;overflow:hidden;"></iframe>            
+            </div>
+        </div>
+    </section>
+
+    <section id="sucursales">
+    <div class="row">
+        <div class="large-12 columns">
+            <div class="section-title">
+                <span class="icon"><i class="fa fa-map-signs"></i></span>
+                <h2>Nuestras sucursales</h2>
+            </div>
+        </div>
+    </div>
+
+    <div class="sucursales">
+
+        <div class="row collapse large-uncollapse">
+
+            <!-- Sucursal -->
+            
+            <div class="large-2 columns">&nbsp;</div>
+            <div class="large-4 columns">
+                <div class="sucursal-item clearfix">
+                    <div class="sucursal-img">
+                        <img src="img/sucursal-patricios.jpg" alt="Senillosa" style='width:100%'>
+                    </div>
+                    <div class="sucursal-desc">
+                        <i class="fa fa-map-marker"></i>
+                        <h3>Parque Patricios</h3>
+                        <p>
+                            24 de Noviembre 1926, <span>CABA</span>
+                        </p>
+                        <p>
+                            Lunes a viernes 6 a 17 hs.
+                            <span>Sábados 6 a 13 hs.</span>
+                        </p>
+                        <p>
+                            Tel: 4943.2106
+                        </p>
+                        
+                    </div>
+
+                    <strong><a class="btn" href="https://wa.me/+5491167637860" target="_blank" style="background-color:#16b952;"><i class="fa fa-whatsapp" style="color:white;font-size:1.3em;vertical-align:middle"></i> &nbsp;Whatsapp</a></strong>
+                    <br>
+                    
+                    <a class="btn bordo" href="https://goo.gl/maps/F5CN9nimz9L2" title="Ver en Google Maps" target="_blank">Ver mapa</a>
+                </div>
+            </div>
+
+            <!-- Sucursal -->
+            <div class="large-4 columns end">
+                <div class="sucursal-item clearfix">
+                    <div class="sucursal-img">
+                        <img src="img/sucursal-senillosa.jpg" alt="Senillosa" style='width:100%'>
+                    </div>
+                    <div class="sucursal-desc">
+                        <i class="fa fa-map-marker"></i>
+                        <h3>Caballito</h3>
+                        <p>
+                            Senillosa 626, <span>CABA</span>
+                        </p>
+                        <p>
+                            Lunes a viernes 7 a 19 hs.
+                            <span>Sábado 7 a 13 hs.</span>
+                        </p>
+                        <p>
+                            Tel: 4923.4188
+                        </p>
+
+                    </div>
+
+                    <strong><a class="btn" href="https://wa.me/+5491122360944" target="_blank" style="background-color:#16b952;"><i class="fa fa-whatsapp" style="color:white;font-size:1.3em;vertical-align:middle"></i> &nbsp;Whatsapp</a></strong>
+                    <br>
+                    <a class="btn bordo" href="https://goo.gl/maps/bMxwxqC6oRE2" title="Ver en Google Maps" target="_blank">Ver mapa</a>
+                </div>
+            </div>
+
+            <!-- Sucursal 
+            <div class="large-4 columns">
+                <div class="sucursal-item clearfix">
+                    <div class="sucursal-img">
+                        <img src="img/sucursal-asamblea.jpg" alt="Senillosa">
+                    </div>
+                    <div class="sucursal-desc">
+                        <i class="fa fa-map-marker"></i>
+                        <h3>Parque Chacabuco</h3>
+                        <p>
+                            Av. Asamblea 1572, <span>CABA</span>
+                        </p>
+                        <p>
+                            Lunes a viernes 8 a 20 hs.
+                            <span>Sábados 8 a 14 hs.</span>
+                        </p>
+                        <p>
+                            Tel: 4922.3755
+                        </p>
+
+                    </div>
+                    <a class="btn bordo" href="https://goo.gl/maps/Yxd9kfkCVpH2" title="Ver en Google Maps" target="_blank">Ver mapa</a>
+                </div>
+            </div>
+-->
+            <!-- Sucursal -->
+             <!--
+            <div class="large-4 columns">
+                <div class="sucursal-item clearfix">
+                    <div class="sucursal-img">
+                        <img src="img/sucursal-boedo.jpg" alt="Senillosa" style='width:100%'>
+                    </div>
+                    <div class="sucursal-desc">
+                        <i class="fa fa-map-marker"></i>
+                        <h3>Boedo</h3>
+                        <p>
+                            Inclán 4200, <span>CABA</span>
+                        </p>
+                        <p>
+                            Lunes a viernes 7 a 19 hs.
+                            <span>Sábados 7 a 14 hs.</span>
+                        </p>
+                        <p>
+                            Tel: 4921.0194
+                        </p>
+
+                    </div>
+                    <a class="btn bordo" href="https://goo.gl/maps/ySjFGPYyfUE2" title="Ver en Google Maps" target="_blank">Ver mapa</a>
+
+                </div>
+            </div>
+-->
+        </div>
+    </div>
+
+</section>
+
+    <footer class="text-center">
+    <img class="footer-logo" src="img/logo-sersale.png">
+    <p>
+        <span class="medium">Frigorífico Sersale SRL.</span>
+        <br>24 de Noviembre 1926, Ciudad A. de Buenos Aires / <span style="white-space:nowrap">011 4943.2106</span>
+    </p>
+    <p class="fs12">
+        &copy; 2017. Todos los derechos reservados
+    </p>
+</footer>
+
+<div class="signature">
+    <a target="_blank" href="http://estudioestratega.com/" title="Estudio Estratega. Diseño gráfico y desarrollo web."><img src="img/strg-icon.svg" title="Estudio Estratega. Diseño gráfico y desarrollo web." alt="Logo Estudio Estratega"></a>
+</div>
+
+<script src="js/vendor/jquery.js"></script>
+<script src="js/vendor/what-input.js"></script>
+<script src="js/vendor/foundation.js"></script>
+<script src="js/swiper-3.3.1/swiper.jquery.min.js"></script>
+<script src="js/app.js"></script>
+
+<script>
+    $(document).ready(function(){
+        $("#main-menu a[href='/']").addClass('active');
+    })
+</script>
+
+</body>
+
+</html>

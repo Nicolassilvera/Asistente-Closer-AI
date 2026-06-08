@@ -246,6 +246,73 @@ class GPTEngine:
         except Exception as e:
             raise GPTError(f"Error de OpenAI: {e}")
 
+    # ── Chat conversacional (streaming) ──────────────────────────────────
+
+    def chat_stream(self, messages: list):
+        """
+        Genera respuesta conversacional en modo streaming.
+        `messages` es una lista de dicts {role, content} (historial completo).
+        Yield: strings de texto (chunks).
+        """
+        handlers = {
+            "groq":   self._chat_stream_groq,
+            "gemini": self._chat_stream_gemini,
+            "openai": self._chat_stream_openai,
+        }
+        yield from handlers[self.provider](messages)
+
+    def _chat_stream_groq(self, messages: list):
+        try:
+            stream = self._groq.chat.completions.create(
+                model=self._model,
+                messages=messages,
+                stream=True,
+                temperature=0.7,
+                max_tokens=2000,
+            )
+            for chunk in stream:
+                delta = chunk.choices[0].delta.content or ""
+                if delta:
+                    yield delta
+        except Exception as e:
+            raise GPTError(f"Error de Groq (chat): {e}")
+
+    def _chat_stream_gemini(self, messages: list):
+        # Gemini: convertir historial al formato Contents + simular streaming
+        try:
+            from google.genai import types
+            system_msg = next((m["content"] for m in messages if m["role"] == "system"), "")
+            user_msgs  = [m for m in messages if m["role"] != "system"]
+            contents   = "\n".join(f"{m['role'].upper()}: {m['content']}" for m in user_msgs)
+            response = self._gclient.models.generate_content(
+                model=self._model,
+                contents=contents,
+                config=types.GenerateContentConfig(
+                    system_instruction=system_msg or None,
+                    temperature=0.7,
+                    max_output_tokens=2000,
+                )
+            )
+            yield response.text.strip()
+        except Exception as e:
+            raise GPTError(f"Error de Gemini (chat): {e}")
+
+    def _chat_stream_openai(self, messages: list):
+        try:
+            stream = self._openai.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=messages,
+                stream=True,
+                temperature=0.7,
+                max_tokens=2000,
+            )
+            for chunk in stream:
+                delta = chunk.choices[0].delta.content or ""
+                if delta:
+                    yield delta
+        except Exception as e:
+            raise GPTError(f"Error de OpenAI (chat): {e}")
+
     # ── Parser JSON ───────────────────────────────────────────────────────
 
     def _parse_json(self, raw: str) -> dict:

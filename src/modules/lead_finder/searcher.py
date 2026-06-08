@@ -55,15 +55,22 @@ class GoogleSearcher:
 
         try:
             logger.info(f"Google Maps: {query}")
-            self.browser.navigate(url, wait_until="networkidle")
-            time.sleep(2)
+            self.browser.navigate(url, wait_until="load")
 
-            page    = self.browser.page
+            page = self.browser.page
+
+            # Esperar a que aparezca el feed de resultados (hasta 30s)
+            try:
+                page.wait_for_selector('[role=feed]', timeout=30000)
+            except Exception:
+                logger.warning("Google Maps: feed no apareció en 30s, intentando igual")
+                time.sleep(3)
+
             results = []
 
             # Cargar más resultados haciendo scroll en el feed
-            for _ in range(3):
-                page.evaluate("document.querySelector('[role=feed]')?.scrollBy(0, 1000)")
+            for _ in range(4):
+                page.evaluate("document.querySelector('[role=feed]')?.scrollBy(0, 1200)")
                 time.sleep(1.5)
 
             cards = page.query_selector_all('[role=feed] > div > div > a')
@@ -115,29 +122,75 @@ class GoogleSearcher:
         data = {}
 
         # Campos estructurados del panel
+        # data-item-id selectors son más fiables que los basados en texto locale
         extractors = {
-            "phone":   ['[data-tooltip="Copiar número de teléfono"]',
-                        'button[data-item-id^="phone"]'],
-            "website": ['a[data-item-id="authority"]',
-                        '[data-tooltip="Abrir sitio web"]'],
-            "address": ['button[data-item-id="address"]',
-                        '[data-tooltip="Copiar dirección"]'],
+            "phone": [
+                'button[data-item-id^="phone"]',
+                '[data-tooltip="Copiar número de teléfono"]',
+                '[data-tooltip="Copy phone number"]',
+                'button[aria-label*="teléfono"]',
+                'button[aria-label*="phone"]',
+            ],
+            "website": [
+                'a[data-item-id="authority"]',
+                '[data-tooltip="Abrir sitio web"]',
+                '[data-tooltip="Open website"]',
+                'a[aria-label*="sitio web"]',
+                'a[aria-label*="website"]',
+            ],
+            "address": [
+                'button[data-item-id="address"]',
+                '[data-tooltip="Copiar dirección"]',
+                '[data-tooltip="Copy address"]',
+                'button[aria-label*="Dirección"]',
+                'button[aria-label*="Address"]',
+            ],
         }
         for field, selectors in extractors.items():
             for sel in selectors:
                 try:
                     el = page.query_selector(sel)
-                    if el:
-                        data[field] = el.inner_text().strip()
-                        break
+                    if not el:
+                        continue
+                    # Para website usamos el href real, no el texto visible
+                    if field == "website":
+                        href = el.get_attribute("href") or ""
+                        if href and href.startswith("http"):
+                            data[field] = href
+                            break
+                    else:
+                        val = el.inner_text().strip()
+                        if val:
+                            data[field] = val
+                            break
                 except Exception:
                     continue
 
+        # Si el teléfono no se encontró, intentar por aria-label en el panel
+        if not data.get("phone"):
+            try:
+                for btn in page.query_selector_all('button[aria-label]'):
+                    label = btn.get_attribute("aria-label") or ""
+                    if any(kw in label.lower() for kw in ("teléfono", "phone", "tel.", "llam")):
+                        txt = btn.inner_text().strip()
+                        # Verificar que el texto parece un número de teléfono
+                        digits = re.sub(r'\D', '', txt)
+                        if 7 <= len(digits) <= 15:
+                            data["phone"] = txt
+                            break
+            except Exception:
+                pass
+
         # Rating de Google
         try:
-            el = page.query_selector('[jsaction*="pane.rating"]')
-            if el:
-                data["rating"] = el.inner_text().strip()
+            for sel in ['div.F7nice span[aria-hidden]', '[jsaction*="pane.rating"]',
+                        'span[aria-label*="estrellas"]', 'span[aria-label*="stars"]']:
+                el = page.query_selector(sel)
+                if el:
+                    txt = el.inner_text().strip()
+                    if txt:
+                        data["rating"] = txt
+                        break
         except Exception:
             pass
 
