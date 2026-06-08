@@ -24,6 +24,35 @@ console = Console()
 # Cola compartida entre el wake word y el loop principal
 instruction_queue = queue.Queue()
 
+def _ensure_playwright():
+    """Instala Chromium automáticamente si no está disponible en esta PC."""
+    import subprocess
+    try:
+        from playwright.sync_api import sync_playwright
+        with sync_playwright() as p:
+            exe = p.chromium.executable_path
+        if os.path.exists(exe):
+            return  # ya instalado, nada que hacer
+    except Exception:
+        pass
+
+    console.print("\n[yellow]► Primera vez en esta PC — instalando navegador (~150MB)...[/yellow]")
+    console.print("[dim]  Esto tarda unos minutos solo la primera vez, después arranca normal.[/dim]\n")
+
+    try:
+        # Usa el driver de playwright directamente (funciona en .exe y en dev)
+        from playwright._impl._driver import compute_driver_executable
+        driver, cli = compute_driver_executable()
+        result = subprocess.run([str(driver), str(cli), "install", "chromium"], timeout=600)
+        if result.returncode == 0:
+            console.print("[green]✓ Navegador instalado correctamente[/green]\n")
+        else:
+            console.print("[red]✗ No se pudo instalar automáticamente.[/red]")
+            console.print("[dim]  Corré manualmente: python -m playwright install chromium[/dim]\n")
+    except Exception as e:
+        console.print(f"[red]✗ Error instalando navegador: {e}[/red]")
+        console.print("[dim]  Corré manualmente: python -m playwright install chromium[/dim]\n")
+
 def smoke_test():
     repo       = LeadRepository()
     event_repo = LeadEventRepository()
@@ -114,6 +143,8 @@ _confirming = False
 
 def main():
     console.print(f"\n[bold purple]🤖 {config.APP_NAME}[/bold purple] [dim]iniciando...[/dim]")
+
+    _ensure_playwright()
 
     try:
         config.validate()

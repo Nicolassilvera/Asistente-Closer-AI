@@ -441,11 +441,14 @@ def monitor_toggle():
 
 # ── SETTINGS ──────────────────────────────────────────────────────────────────
 _SETTINGS_DEFAULTS = {
-    "company_name":      "Balanzas Caballito",
-    "monitor_interval":  "5",
-    "auto_followup":     "0",
-    "groq_api_key":      "",
-    "gemini_api_key":    "",
+    "company_name":        "Balanzas Caballito",
+    "monitor_interval":    "5",
+    "auto_followup":       "0",
+    "groq_api_key":        "",
+    "gemini_api_key":      "",
+    "elevenlabs_api_key":  "",
+    "elevenlabs_voice_id": "",
+    "edge_tts_voice":      "es-MX-JorgeNeural",
 }
 
 def _settings_get_all() -> dict:
@@ -473,8 +476,11 @@ def get_settings():
         raise HTTPException(500, str(e))
 
 _API_KEY_ENV = {
-    "groq_api_key":   "GROQ_API_KEY",
-    "gemini_api_key": "GEMINI_API_KEY",
+    "groq_api_key":        "GROQ_API_KEY",
+    "gemini_api_key":      "GEMINI_API_KEY",
+    "elevenlabs_api_key":  "ELEVENLABS_API_KEY",
+    "elevenlabs_voice_id": "ELEVENLABS_VOICE_ID",
+    "edge_tts_voice":      "EDGE_TTS_VOICE",
 }
 
 def _write_dotenv(env_key: str, value: str):

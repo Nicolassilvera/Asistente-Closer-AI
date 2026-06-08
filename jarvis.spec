@@ -36,6 +36,9 @@ a = Analysis(
         'groq', 'bs4', 'beautifulsoup4',
         # DB
         'sqlite3', '_sqlite3',
+        # Voz
+        'numpy', 'speech_recognition', 'pyaudio', 'pygame', 'pygame.mixer',
+        'edge_tts', 'aiohttp',
         # Utilidades
         'dotenv', 'rich', 'rich.console', 'rich.table', 'rich.prompt',
         'multiprocessing.pool', 'email.mime.text',

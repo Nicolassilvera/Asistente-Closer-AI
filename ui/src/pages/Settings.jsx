@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Save, Eye, EyeOff, Building2, Key, Clock, Zap } from 'lucide-react'
+import { Save, Eye, EyeOff, Building2, Key, Clock, Zap, Mic } from 'lucide-react'
 import { getSettings, updateSettings } from '../api'
 
 function Section({ icon: Icon, title, children }) {
@@ -24,7 +24,7 @@ function Field({ label, hint, children }) {
   )
 }
 
-function ApiKeyInput({ value, onChange }) {
+function ApiKeyInput({ value, onChange, placeholder = 'sk-...' }) {
   const [show, setShow] = useState(false)
   return (
     <div className="relative">
@@ -32,7 +32,7 @@ function ApiKeyInput({ value, onChange }) {
         type={show ? 'text' : 'password'}
         value={value}
         onChange={e => onChange(e.target.value)}
-        placeholder="sk-..."
+        placeholder={placeholder}
         className="field-input pr-10"
       />
       <button
@@ -45,16 +45,28 @@ function ApiKeyInput({ value, onChange }) {
   )
 }
 
+const EDGE_VOICES = [
+  { value: 'es-MX-JorgeNeural',     label: 'Jorge — México (masculino)' },
+  { value: 'es-MX-DaliaNeural',     label: 'Dalia — México (femenino)' },
+  { value: 'es-AR-TomasNeural',     label: 'Tomás — Argentina (masculino)' },
+  { value: 'es-AR-ElenaNeural',     label: 'Elena — Argentina (femenino)' },
+  { value: 'es-ES-AlvaroNeural',    label: 'Álvaro — España (masculino)' },
+  { value: 'es-ES-ElviraNeural',    label: 'Elvira — España (femenino)' },
+]
+
 export default function Settings() {
   const qc = useQueryClient()
   const { data: saved, isLoading } = useQuery({ queryKey: ['settings'], queryFn: getSettings })
 
   const [form, setForm] = useState({
-    company_name:     '',
-    monitor_interval: '5',
-    auto_followup:    '0',
-    groq_api_key:     '',
-    gemini_api_key:   '',
+    company_name:        '',
+    monitor_interval:    '5',
+    auto_followup:       '0',
+    groq_api_key:        '',
+    gemini_api_key:      '',
+    elevenlabs_api_key:  '',
+    elevenlabs_voice_id: '',
+    edge_tts_voice:      'es-MX-JorgeNeural',
   })
 
   useEffect(() => {
@@ -67,15 +79,17 @@ export default function Settings() {
     mutationFn: () => updateSettings(form),
     onSuccess: (data) => {
       qc.setQueryData(['settings'], data)
-      setSaved(true)
-      setTimeout(() => setSaved(false), 2500)
+      setSavedOk(true)
+      setTimeout(() => setSavedOk(false), 2500)
     },
   })
-  const [savedOk, setSaved] = useState(false)
+  const [savedOk, setSavedOk] = useState(false)
 
   if (isLoading) return (
     <div className="p-8 text-jarvis-muted text-sm">Cargando ajustes…</div>
   )
+
+  const hasElevenLabs = !!form.elevenlabs_api_key
 
   return (
     <div className="p-6 max-w-2xl space-y-5">
@@ -129,16 +143,80 @@ export default function Settings() {
         </div>
       </Section>
 
-      {/* API Keys */}
-      <Section icon={Key} title="Claves de API">
+      {/* Voz */}
+      <Section icon={Mic} title="Voz">
+
+        {/* Proveedor activo */}
+        <div className="flex items-center gap-3">
+          <span className={`px-2.5 py-1 rounded-full text-[11px] font-semibold
+                           ${hasElevenLabs
+                             ? 'bg-purple-500/15 text-purple-400 border border-purple-500/25'
+                             : 'bg-teal-500/15 text-teal-400 border border-teal-500/25'}`}>
+            {hasElevenLabs ? '★ ElevenLabs activo' : '✓ Edge TTS activo (gratis)'}
+          </span>
+          <span className="text-[10px] text-jarvis-muted">
+            {hasElevenLabs
+              ? 'ElevenLabs tiene prioridad sobre Edge TTS'
+              : 'Jarvis habla con voz neural de Microsoft, sin costo'}
+          </span>
+        </div>
+
+        {/* Edge TTS — voz */}
+        <Field
+          label="Voz de Edge TTS"
+          hint="Voz gratuita de Microsoft. Funciona sin ninguna cuenta ni API key.">
+          <select
+            value={form.edge_tts_voice}
+            onChange={e => set('edge_tts_voice', e.target.value)}
+            className="field-input">
+            {EDGE_VOICES.map(v => (
+              <option key={v.value} value={v.value}>{v.label}</option>
+            ))}
+          </select>
+        </Field>
+
+        {/* Separador ElevenLabs */}
+        <div className="border-t border-jarvis-border pt-3 space-y-3">
+          <div>
+            <p className="text-xs font-semibold text-jarvis-text">ElevenLabs — voz premium (opcional)</p>
+            <p className="text-[10px] text-jarvis-muted mt-0.5">
+              Voz ultrarrealista. Gratis hasta 10.000 caracteres/mes.
+              Creá tu cuenta en <span className="text-[#FF8C00]">elevenlabs.io</span> → My Account → API Key.
+              El Voice ID lo encontrás en la página de cada voz.
+            </p>
+          </div>
+
+          <Field label="ElevenLabs API Key">
+            <ApiKeyInput
+              value={form.elevenlabs_api_key}
+              onChange={v => set('elevenlabs_api_key', v)}
+              placeholder="tu api key de elevenlabs..."
+            />
+          </Field>
+
+          <Field
+            label="ElevenLabs Voice ID"
+            hint='Ejemplo: "pNInz6obpgDQGcFmaJgB" — lo copiás desde la web de ElevenLabs.'>
+            <input
+              value={form.elevenlabs_voice_id}
+              onChange={e => set('elevenlabs_voice_id', e.target.value)}
+              className="field-input"
+              placeholder="pNInz6obpgDQGcFmaJgB"
+            />
+          </Field>
+        </div>
+      </Section>
+
+      {/* API Keys IA */}
+      <Section icon={Key} title="Claves de API — Inteligencia Artificial">
         <p className="text-xs text-jarvis-muted -mt-1">
           Las claves se guardan en tu <code className="bg-jarvis-surface px-1 rounded">.env</code> y toman efecto inmediatamente.
           Nunca salen de tu equipo.
         </p>
-        <Field label="Groq API Key" hint="Usada para el Asistente IA (Chat).">
+        <Field label="Groq API Key" hint="Usada para el Asistente IA (Chat). Gratis en console.groq.com.">
           <ApiKeyInput value={form.groq_api_key} onChange={v => set('groq_api_key', v)} />
         </Field>
-        <Field label="Gemini API Key" hint="Alternativa a Groq si querés cambiar el modelo.">
+        <Field label="Gemini API Key" hint="Alternativa a Groq. Gratis en aistudio.google.com.">
           <ApiKeyInput value={form.gemini_api_key} onChange={v => set('gemini_api_key', v)} />
         </Field>
       </Section>
