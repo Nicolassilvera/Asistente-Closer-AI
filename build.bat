@@ -71,6 +71,7 @@ echo.
 echo Copiando archivos de datos...
 if not exist "dist\JarvisCRM\data" mkdir "dist\JarvisCRM\data"
 if not exist "dist\JarvisCRM\logs" mkdir "dist\JarvisCRM\logs"
+if exist "Chrome_extension" xcopy /E /I /Q "Chrome_extension" "dist\JarvisCRM\Chrome_extension" >nul
 
 :: Crear .env plantilla sin valores — las API keys se configuran desde Ajustes
 (

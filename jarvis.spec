@@ -1,21 +1,28 @@
 # jarvis.spec — PyInstaller spec para Jarvis CRM
 import os, sys
+from PyInstaller.utils.hooks import collect_all, collect_data_files
 
 block_cipher = None
 
-# Incluir ui/dist solo si fue buildeado
 datas = [('src', 'src')]
 if os.path.exists('ui/dist'):
     datas.append(('ui/dist', 'ui/dist'))
-if os.path.exists('.env'):
-    datas.append(('.env', '.'))
+
+# Recolectar numpy, pygame y speech_recognition con todos sus binarios y datos
+binaries  = []
+hiddenimports_extra = []
+for pkg in ['numpy', 'pygame', 'speech_recognition', 'pyaudio']:
+    d, b, h = collect_all(pkg)
+    datas    += d
+    binaries += b
+    hiddenimports_extra += h
 
 a = Analysis(
     ['main.py'],
     pathex=['.'],
-    binaries=[],
+    binaries=binaries,
     datas=datas,
-    hiddenimports=[
+    hiddenimports=hiddenimports_extra + [
         # FastAPI / Uvicorn
         'uvicorn', 'uvicorn.main', 'uvicorn.config', 'uvicorn.server',
         'uvicorn.lifespan.off', 'uvicorn.lifespan.on',
@@ -33,11 +40,10 @@ a = Analysis(
         'h11', 'websockets', 'anyio', 'anyio._backends._asyncio',
         'sniffio',
         # IA / scraping
-        'groq', 'bs4', 'beautifulsoup4',
+        'groq', 'bs4',
         # DB
         'sqlite3', '_sqlite3',
         # Voz
-        'numpy', 'speech_recognition', 'pyaudio', 'pygame', 'pygame.mixer',
         'edge_tts', 'aiohttp',
         # Utilidades
         'dotenv', 'rich', 'rich.console', 'rich.table', 'rich.prompt',
@@ -49,7 +55,7 @@ a = Analysis(
         'src.modules.whatsapp_monitor',
     ],
     excludes=[
-        'tkinter', 'matplotlib', 'numpy', 'scipy', 'pandas',
+        'tkinter', 'matplotlib', 'scipy', 'pandas',
         'PIL', 'cv2', 'pytest', 'IPython', 'notebook',
     ],
     win_no_prefer_redirects=False,
@@ -70,8 +76,8 @@ exe = EXE(
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
-    console=True,   # True = ventana de consola (para ver logs); cambiar a False para modo silencioso
-    icon=None,      # Reemplazar con 'icon.ico' si tenés un ícono
+    console=True,
+    icon=None,
 )
 
 coll = COLLECT(
