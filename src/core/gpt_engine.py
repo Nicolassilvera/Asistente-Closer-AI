@@ -34,7 +34,7 @@ Si tiene TODOS los datos, devolvé el plan normal:
   "tasks": [
     {{
       "description": "qué hace en lenguaje humano",
-      "action_type": "browser|app|file|whatsapp|facebook|messenger|system|message|crm",
+      "action_type": "browser|app|file|whatsapp|facebook|messenger|system|message|crm|lead_finder",
       "params": {{}}
     }}
   ]
@@ -52,6 +52,16 @@ Datos necesarios por tipo de acción:
   "respondé a Francisco de Marketplace" → action: send_message, marketplace: true, contact: Francisco
   "abrí los mensajes de Marketplace"   → action: get_pending, marketplace: true
   "mandá mensaje a Juan por Messenger" → action: send_message, marketplace: false
+- lead_finder: buscar prospectos/compradores/clientes potenciales en Google Maps.
+  Params: {{"category": "rubro exacto de empresa", "city": "ciudad o zona", "max_results": 15}}
+  REGLA: siempre generá UNA sola tarea lead_finder, no múltiples. Elegí la categoría más útil.
+  Para balanzas/básculas industriales los compradores típicos son:
+  frigoríficos, supermercados, plantas industriales, logística y distribución, depósitos
+  Ejemplos:
+  "buscame compradores de balanzas en CABA"          → lead_finder, category: "frigoríficos", city: "CABA"
+  "encontrá clientes para básculas en Rosario"       → lead_finder, category: "supermercados mayoristas", city: "Rosario"
+  "buscame posibles compradores en CABA"             → lead_finder, category: "plantas industriales", city: "CABA"
+  "prospectos para balanzas industriales en Córdoba" → lead_finder, category: "distribuidoras", city: "Córdoba"
 
 REGLAS FIJAS — nunca cambiar:
 - messenger → SIEMPRE action_type: "messenger", NUNCA "app"

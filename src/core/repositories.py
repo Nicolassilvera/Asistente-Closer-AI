@@ -184,6 +184,17 @@ class LeadRepository:
         except Exception as e:
             raise DatabaseError(f"Error al actualizar lead: {e}")
 
+    def delete(self, lead_id: str) -> bool:
+        try:
+            with get_connection() as conn:
+                conn.execute("DELETE FROM lead_events WHERE lead_id = ?", (lead_id,))
+                conn.execute("DELETE FROM conversations WHERE lead_id = ?", (lead_id,))
+                conn.execute("DELETE FROM leads WHERE id = ?", (lead_id,))
+            logger.info(f"Lead eliminado: {lead_id[:8]}")
+            return True
+        except Exception as e:
+            raise DatabaseError(f"Error al eliminar lead: {e}")
+
     def search(self, query: str) -> list[dict]:
         """Búsqueda por nombre, ciudad, categoría o notas."""
         try:

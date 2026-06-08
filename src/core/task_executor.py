@@ -102,6 +102,10 @@ class TaskExecutor:
             logger.info("Facebook Marketplace abierto en browser del usuario")
             return "Facebook Marketplace abierto"
 
+        # lead_finder no necesita el browser del TaskExecutor
+        if action_type == "lead_finder":
+            return self._handle_lead_finder(params)
+
         # ── Resto normal ──────────────────────────────────────────────────
         if not self._started:
             self.start()
@@ -138,6 +142,13 @@ class TaskExecutor:
             return self._handle_spotify(params)
 
         if not url:
+            query = params.get("query", "").strip()
+            if query:
+                import urllib.parse, webbrowser
+                search_url = f"https://www.google.com/search?q={urllib.parse.quote(query)}"
+                webbrowser.open_new_tab(search_url)
+                logger.info(f"Búsqueda abierta en browser del usuario: {query}")
+                return f"Búsqueda abierta: {query}"
             raise TaskExecutionError("abrir navegador", "Falta el parámetro 'url'")
 
         # Siempre abrir en el browser del usuario — sin Playwright
@@ -399,7 +410,6 @@ class TaskExecutor:
             params.get("text") or
             ""
         )
-        mode = params.get("mode", "")
 
         if message:
             from rich.console import Console
@@ -446,6 +456,36 @@ class TaskExecutor:
             if params.get(key):
                 return params[key]
         return ""
+
+    def _handle_lead_finder(self, params: dict) -> str:
+        """Busca prospectos en Google Maps y los guarda en el CRM."""
+        from src.modules.lead_finder.finder import LeadFinder
+
+        category    = (params.get("category") or params.get("rubro") or
+                       params.get("query") or "").strip()
+        city        = (params.get("city") or params.get("ciudad") or
+                       params.get("zona") or "").strip()
+        max_results = int(params.get("max_results", 15))
+
+        if not category:
+            raise TaskExecutionError("buscar leads", "Falta la categoría de empresa a buscar")
+        if not city:
+            raise TaskExecutionError("buscar leads", "Falta la ciudad o zona donde buscar")
+
+        finder = LeadFinder()
+        try:
+            leads = finder.find(category, city, max_results=max_results, auto_save=True)
+            return (
+                f"Encontré {len(leads)} leads de '{category}' en {city} "
+                f"y los guardé en el CRM"
+            )
+        except Exception as e:
+            raise TaskExecutionError(f"buscar leads de {category} en {city}", str(e))
+        finally:
+            try:
+                finder.close()
+            except Exception:
+                pass
 
     def close(self):
         if self._started:

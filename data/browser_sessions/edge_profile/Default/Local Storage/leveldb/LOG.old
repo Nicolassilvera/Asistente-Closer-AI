@@ -1,3 +1,15 @@
-2026/06/06-20:44:24.605 6eb4 Reusing MANIFEST E:\Jarvis Emprendedor\jarvis\data\browser_sessions\edge_profile\Default\Local Storage\leveldb/MANIFEST-000001
-2026/06/06-20:44:24.611 6eb4 Recovering log #73
-2026/06/06-20:44:24.612 6eb4 Reusing old log E:\Jarvis Emprendedor\jarvis\data\browser_sessions\edge_profile\Default\Local Storage\leveldb/000073.log 
+2026/06/06-21:31:05.505 34e4 Reusing MANIFEST E:\Jarvis Emprendedor\jarvis\data\browser_sessions\edge_profile\Default\Local Storage\leveldb/MANIFEST-000001
+2026/06/06-21:31:05.510 34e4 Recovering log #73
+2026/06/06-21:31:05.511 34e4 Reusing old log E:\Jarvis Emprendedor\jarvis\data\browser_sessions\edge_profile\Default\Local Storage\leveldb/000073.log 
+2026/06/06-21:31:26.999 214 Level-0 table #77: started
+2026/06/06-21:31:27.003 214 Level-0 table #77: 18636 bytes OK
+2026/06/06-21:31:27.005 214 Delete type=0 #73
+2026/06/06-21:31:27.005 34e4 Compacting 4@0 + 1@1 files
+2026/06/06-21:31:27.014 34e4 Generated table #78@0: 1321 keys, 144824 bytes
+2026/06/06-21:31:27.014 34e4 Compacted 4@0 + 1@1 files => 144824 bytes
+2026/06/06-21:31:27.015 34e4 compacted to: files[ 0 1 0 0 0 0 0 ]
+2026/06/06-21:31:27.016 34e4 Delete type=2 #65
+2026/06/06-21:31:27.016 34e4 Delete type=2 #68
+2026/06/06-21:31:27.016 34e4 Delete type=2 #71
+2026/06/06-21:31:27.016 34e4 Delete type=2 #74
+2026/06/06-21:31:27.016 34e4 Delete type=2 #77

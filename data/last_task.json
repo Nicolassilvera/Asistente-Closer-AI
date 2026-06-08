@@ -1,10 +1,33 @@
 {
-  "intent": "informar sobre tarea completada",
+  "intent": "buscar compradores de balanzas industriales en CABA",
   "tasks": [
     {
-      "description": "ya está resuelto",
-      "action_type": "system",
-      "params": {}
+      "description": "buscar en Google Maps",
+      "action_type": "browser",
+      "params": {
+        "query": "balanzas industriales CABA"
+      }
+    },
+    {
+      "description": "buscar en redes sociales",
+      "action_type": "browser",
+      "params": {
+        "query": "balanzas industriales CABA compradores"
+      }
+    },
+    {
+      "description": "buscar en LinkedIn",
+      "action_type": "browser",
+      "params": {
+        "query": "compradores de balanzas industriales en CABA"
+      }
+    },
+    {
+      "description": "buscar en Facebook",
+      "action_type": "browser",
+      "params": {
+        "query": "compradores de balanzas industriales en CABA"
+      }
     }
   ],
   "platform": ""

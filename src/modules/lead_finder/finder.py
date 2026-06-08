@@ -157,6 +157,35 @@ class LeadFinder:
             "Abrí http://localhost:5173 para verlos.[/dim]\n"
         )
 
+    def find_batch(
+        self,
+        categories: list,
+        cities: list,
+        max_per_combination: int = 10,
+        progress_callback=None,
+    ) -> list:
+        """
+        Busca en todas las combinaciones (rubro × zona).
+        progress_callback(done, total, category, city, found, error=None)
+        """
+        self.start()
+        all_leads   = []
+        combinations = [(cat, city) for cat in categories for city in cities]
+        total        = len(combinations)
+
+        for i, (cat, city) in enumerate(combinations):
+            try:
+                leads = self.find(cat, city, max_results=max_per_combination, auto_save=True)
+                all_leads.extend(leads)
+                if progress_callback:
+                    progress_callback(i + 1, total, cat, city, len(leads))
+            except Exception as e:
+                logger.warning(f"LeadFinder batch: error en '{cat}' — '{city}': {e}")
+                if progress_callback:
+                    progress_callback(i + 1, total, cat, city, 0, str(e))
+
+        return all_leads
+
     def close(self):
         if self._started:
             self.browser.close()

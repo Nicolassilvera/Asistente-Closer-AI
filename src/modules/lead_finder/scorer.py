@@ -1,6 +1,4 @@
 # src/modules/lead_finder/scorer.py
-import json
-from src.core.logger import logger
 
 class LeadScorer:
     """
@@ -19,6 +17,7 @@ class LeadScorer:
         if lead.get("website"):  score += 0.5
         if lead.get("instagram"):score += 0.5
         if lead.get("email"):    score += 0.5
+        if lead.get("facebook"): score += 0.3
 
         # ── Bonus por fuente ──────────────────────────────────────────────
         source_bonus = {
@@ -53,8 +52,8 @@ class LeadScorer:
         else:            return "baja"
 
     def classify_status(self, score: float) -> str:
-        """Estado inicial según score."""
-        if score >= 8:   return "prioritario"
+        """Estado inicial según score (valores válidos del CRM)."""
+        if score >= 8:   return "caliente"
         elif score >= 5: return "nuevo"
         else:            return "analizado"
 
@@ -64,4 +63,15 @@ class LeadScorer:
             lead["lead_score"] = self.score(lead)
             lead["priority"]   = self.classify_priority(lead["lead_score"])
             lead["lead_status"]= self.classify_status(lead["lead_score"])
+            # Mover campos sin columna en DB a notes
+            address  = lead.pop("address",  None)
+            rating   = lead.pop("rating",   None)
+            facebook = lead.pop("facebook", None)
+            extras   = []
+            if address:  extras.append(f"Dirección: {address}")
+            if rating:   extras.append(f"Rating Google: {rating}")
+            if facebook: extras.append(f"Facebook: {facebook}")
+            if extras:
+                existing = lead.get("notes") or ""
+                lead["notes"] = (existing + " | " + " | ".join(extras)).strip(" |")
         return sorted(leads, key=lambda x: x["lead_score"], reverse=True)

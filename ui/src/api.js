@@ -27,6 +27,9 @@ export const updateLead = (id, data) =>
 export const updateStatus = (id, status, notes = '') =>
   api.patch(`/leads/${id}/status`, { status, notes }).then(r => r.data)
 
+export const deleteLead = (id) =>
+  api.delete(`/leads/${id}`)
+
 // ── Stats ──────────────────────────────────────────────
 export const getStats = () =>
   api.get('/stats').then(r => r.data)
@@ -55,6 +58,13 @@ export const prospectLead = (leadId, productContext) =>
 // ── WhatsApp via Jarvis ────────────────────────────────
 export const sendWhatsAppViaJarvis = (contact, message, leadId) =>
   api.post('/whatsapp/send', { contact, message, lead_id: leadId }).then(r => r.data)
+
+// ── LeadFinder ─────────────────────────────────────────
+export const startLeadFind = (categories, cities, maxPerCombination = 10) =>
+  api.post('/leads/find', { categories, cities, max_per_combination: maxPerCombination }).then(r => r.data)
+
+export const getLeadFindStatus = (jobId) =>
+  api.get(`/leads/find/${jobId}`).then(r => r.data)
 
 // ── WebSocket ──────────────────────────────────────────
 export function connectWS(onMessage) {

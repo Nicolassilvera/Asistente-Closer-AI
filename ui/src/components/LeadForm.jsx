@@ -4,12 +4,9 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { X } from 'lucide-react'
 import { createLead } from '../api'
 
-const ESTADOS = [
-  'nuevo', 'analizado', 'contactado', 'respondio',
-  'interesado', 'caliente', 'negociacion', 'cerrado', 'descartado'
-]
-
-const PRIORIDADES = ['alta', 'media', 'baja']
+const ESTADOS     = ['nuevo','analizado','contactado','respondio','interesado','caliente','negociacion','cerrado','descartado']
+const PRIORIDADES = ['alta','media','baja']
+const FUENTES     = ['manual','google_maps','facebook','instagram','google_organic','referido']
 
 export default function LeadForm({ onClose }) {
   const qc = useQueryClient()
@@ -30,180 +27,135 @@ export default function LeadForm({ onClose }) {
       qc.invalidateQueries({ queryKey: ['stats'] })
       onClose()
     },
-    onError: (e) => setError(e.message || 'Error al crear lead')
+    onError: (e) => setError(e.message || 'Error al crear lead'),
   })
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
-
   const handleSubmit = () => {
-    if (!form.company_name.trim()) {
-      setError('El nombre de la empresa es obligatorio')
-      return
-    }
+    if (!form.company_name.trim()) { setError('El nombre de la empresa es obligatorio'); return }
     setError('')
     mutation.mutate(form)
   }
 
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-      <div className="bg-jarvis-card border border-jarvis-border rounded-xl w-full max-w-2xl
-                      max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 overflow-y-auto">
+      <div className="bg-jarvis-card border border-jarvis-border rounded-xl w-full max-w-2xl my-4">
 
         {/* Header */}
-        <div className="flex items-center justify-between p-5 border-b border-jarvis-border">
-          <h2 className="text-lg font-semibold text-jarvis-text">Nuevo lead</h2>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-jarvis-border">
+          <h2 className="font-heading font-bold text-base text-jarvis-text">Nuevo lead</h2>
           <button onClick={onClose}
             className="p-1.5 rounded-lg hover:bg-jarvis-border text-jarvis-muted
                        hover:text-jarvis-text transition-colors">
-            <X size={18} />
+            <X size={16} />
           </button>
         </div>
 
         {/* Body */}
-        <div className="p-5 space-y-5">
+        <div className="px-6 py-5 space-y-5 max-h-[70vh] overflow-y-auto">
 
-          {/* Empresa */}
-          <div>
-            <p className="text-xs font-medium text-jarvis-muted uppercase tracking-wider mb-3">
-              Empresa
-            </p>
+          <Section label="Empresa">
             <div className="grid grid-cols-2 gap-3">
               <div className="col-span-2">
-                <Input label="Nombre de la empresa *"
-                  value={form.company_name}
-                  onChange={v => set('company_name', v)} />
+                <Field label="Nombre de la empresa *">
+                  <input value={form.company_name} onChange={e => set('company_name', e.target.value)}
+                    className="field-input" placeholder="Ej: Frigorífico Santa Rosa" />
+                </Field>
               </div>
-              <Input label="Contacto"
-                value={form.contact_name}
-                onChange={v => set('contact_name', v)} />
-              <Input label="Rubro / Categoría"
-                value={form.category}
-                onChange={v => set('category', v)} />
-              <Input label="Ciudad"
-                value={form.city}
-                onChange={v => set('city', v)} />
-              <Input label="Provincia"
-                value={form.province}
-                onChange={v => set('province', v)} />
+              <Field label="Persona de contacto">
+                <input value={form.contact_name} onChange={e => set('contact_name', e.target.value)} className="field-input" />
+              </Field>
+              <Field label="Rubro">
+                <input value={form.category} onChange={e => set('category', e.target.value)} className="field-input" />
+              </Field>
+              <Field label="Ciudad">
+                <input value={form.city} onChange={e => set('city', e.target.value)} className="field-input" />
+              </Field>
+              <Field label="Provincia">
+                <input value={form.province} onChange={e => set('province', e.target.value)} className="field-input" />
+              </Field>
             </div>
-          </div>
+          </Section>
 
-          {/* Contacto */}
-          <div>
-            <p className="text-xs font-medium text-jarvis-muted uppercase tracking-wider mb-3">
-              Contacto
-            </p>
+          <Section label="Contacto">
             <div className="grid grid-cols-2 gap-3">
-              <Input label="Teléfono"
-                value={form.phone}
-                onChange={v => set('phone', v)} />
-              <Input label="WhatsApp"
-                value={form.whatsapp}
-                onChange={v => set('whatsapp', v)} />
-              <Input label="Email"
-                value={form.email}
-                onChange={v => set('email', v)} />
-              <Input label="Instagram"
-                value={form.instagram}
-                onChange={v => set('instagram', v)} />
+              <Field label="Teléfono">
+                <input value={form.phone} onChange={e => set('phone', e.target.value)} className="field-input" />
+              </Field>
+              <Field label="WhatsApp">
+                <input value={form.whatsapp} onChange={e => set('whatsapp', e.target.value)}
+                  className="field-input" placeholder="+5491100000000" />
+              </Field>
+              <Field label="Email">
+                <input value={form.email} onChange={e => set('email', e.target.value)}
+                  className="field-input" type="email" />
+              </Field>
+              <Field label="Instagram">
+                <input value={form.instagram} onChange={e => set('instagram', e.target.value)}
+                  className="field-input" placeholder="@usuario" />
+              </Field>
               <div className="col-span-2">
-                <Input label="Sitio web"
-                  value={form.website}
-                  onChange={v => set('website', v)} />
+                <Field label="Sitio web">
+                  <input value={form.website} onChange={e => set('website', e.target.value)}
+                    className="field-input" placeholder="https://..." />
+                </Field>
               </div>
             </div>
-          </div>
+          </Section>
 
-          {/* Clasificación */}
-          <div>
-            <p className="text-xs font-medium text-jarvis-muted uppercase tracking-wider mb-3">
-              Clasificación
-            </p>
+          <Section label="Clasificación">
             <div className="grid grid-cols-3 gap-3">
-              <div>
-                <label className="text-xs text-jarvis-muted mb-1 block">Estado</label>
-                <select value={form.lead_status}
-                  onChange={e => set('lead_status', e.target.value)}
-                  className="w-full px-3 py-2 bg-jarvis-surface border border-jarvis-border
-                             rounded-lg text-sm text-jarvis-text focus:outline-none
-                             focus:border-jarvis-purple">
+              <Field label="Estado">
+                <select value={form.lead_status} onChange={e => set('lead_status', e.target.value)} className="field-input">
                   {ESTADOS.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
-              </div>
-              <div>
-                <label className="text-xs text-jarvis-muted mb-1 block">Prioridad</label>
-                <select value={form.priority}
-                  onChange={e => set('priority', e.target.value)}
-                  className="w-full px-3 py-2 bg-jarvis-surface border border-jarvis-border
-                             rounded-lg text-sm text-jarvis-text focus:outline-none
-                             focus:border-jarvis-purple">
+              </Field>
+              <Field label="Prioridad">
+                <select value={form.priority} onChange={e => set('priority', e.target.value)} className="field-input">
                   {PRIORIDADES.map(p => <option key={p} value={p}>{p}</option>)}
                 </select>
-              </div>
-              <div>
-                <label className="text-xs text-jarvis-muted mb-1 block">Score (0-10)</label>
-                <input type="number" min="0" max="10" step="0.5"
-                  value={form.lead_score}
-                  onChange={e => set('lead_score', parseFloat(e.target.value) || 0)}
-                  className="w-full px-3 py-2 bg-jarvis-surface border border-jarvis-border
-                             rounded-lg text-sm text-jarvis-text focus:outline-none
-                             focus:border-jarvis-purple" />
-              </div>
-              <div>
-                <label className="text-xs text-jarvis-muted mb-1 block">Fuente</label>
-                <select value={form.source}
-                  onChange={e => set('source', e.target.value)}
-                  className="w-full px-3 py-2 bg-jarvis-surface border border-jarvis-border
-                             rounded-lg text-sm text-jarvis-text focus:outline-none
-                             focus:border-jarvis-purple">
-                  {['manual','google_maps','facebook','instagram','google_organic','referido'].map(
-                    s => <option key={s} value={s}>{s}</option>
-                  )}
+              </Field>
+              <Field label="Score (0-10)">
+                <input type="number" min={0} max={10} step={0.5}
+                  value={form.lead_score} onChange={e => set('lead_score', parseFloat(e.target.value) || 0)}
+                  className="field-input" />
+              </Field>
+              <Field label="Fuente">
+                <select value={form.source} onChange={e => set('source', e.target.value)} className="field-input">
+                  {FUENTES.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
-              </div>
-              <div>
-                <label className="text-xs text-jarvis-muted mb-1 block">Seguimiento</label>
-                <input type="date"
-                  value={form.followup_date}
-                  onChange={e => set('followup_date', e.target.value)}
-                  className="w-full px-3 py-2 bg-jarvis-surface border border-jarvis-border
-                             rounded-lg text-sm text-jarvis-text focus:outline-none
-                             focus:border-jarvis-purple" />
-              </div>
+              </Field>
+              <Field label="Fecha de seguimiento">
+                <input type="date" value={form.followup_date}
+                  onChange={e => set('followup_date', e.target.value)} className="field-input" />
+              </Field>
             </div>
-          </div>
+          </Section>
 
-          {/* Notas */}
-          <div>
-            <label className="text-xs text-jarvis-muted mb-1 block">Notas</label>
-            <textarea value={form.notes}
-              onChange={e => set('notes', e.target.value)}
-              rows={3}
-              placeholder="Observaciones, contexto, señales comerciales..."
-              className="w-full px-3 py-2 bg-jarvis-surface border border-jarvis-border
-                         rounded-lg text-sm text-jarvis-text placeholder-jarvis-muted
-                         focus:outline-none focus:border-jarvis-purple resize-none" />
-          </div>
+          <Section label="Notas">
+            <textarea value={form.notes} onChange={e => set('notes', e.target.value)}
+              rows={3} placeholder="Observaciones, contexto, señales..."
+              className="field-input resize-none" />
+          </Section>
 
           {error && (
-            <p className="text-sm text-red-400 bg-red-400/10 px-3 py-2 rounded-lg">
+            <div className="text-sm text-red-400 bg-red-400/10 border border-red-400/20 px-3 py-2 rounded-lg">
               {error}
-            </p>
+            </div>
           )}
         </div>
 
         {/* Footer */}
-        <div className="flex gap-3 p-5 border-t border-jarvis-border">
+        <div className="flex gap-3 px-6 py-4 border-t border-jarvis-border">
           <button onClick={onClose}
-            className="flex-1 px-4 py-2 border border-jarvis-border rounded-lg
-                       text-sm text-jarvis-muted hover:bg-jarvis-surface transition-colors">
+            className="flex-1 px-4 py-2.5 border border-jarvis-border rounded-xl text-sm
+                       text-jarvis-muted hover:bg-jarvis-surface transition-colors font-medium">
             Cancelar
           </button>
-          <button onClick={handleSubmit}
-            disabled={mutation.isPending}
-            className="flex-1 px-4 py-2 bg-jarvis-purple hover:bg-purple-500
-                       rounded-lg text-sm font-medium text-white transition-colors
-                       disabled:opacity-50 disabled:cursor-not-allowed">
+          <button onClick={handleSubmit} disabled={mutation.isPending}
+            className="flex-1 px-4 py-2.5 bg-[#FF8C00] hover:bg-[#e07d00] rounded-xl text-sm
+                       font-semibold text-white transition-colors disabled:opacity-50 shadow-lg
+                       shadow-[#FF8C00]/20">
             {mutation.isPending ? 'Guardando...' : 'Guardar lead'}
           </button>
         </div>
@@ -212,15 +164,20 @@ export default function LeadForm({ onClose }) {
   )
 }
 
-function Input({ label, value, onChange, type = 'text' }) {
+function Section({ label, children }) {
   return (
-    <div>
-      <label className="text-xs text-jarvis-muted mb-1 block">{label}</label>
-      <input type={type} value={value}
-        onChange={e => onChange(e.target.value)}
-        className="w-full px-3 py-2 bg-jarvis-surface border border-jarvis-border
-                   rounded-lg text-sm text-jarvis-text placeholder-jarvis-muted
-                   focus:outline-none focus:border-jarvis-purple" />
+    <div className="space-y-3">
+      <p className="text-[11px] font-semibold text-jarvis-muted uppercase tracking-widest">{label}</p>
+      {children}
+    </div>
+  )
+}
+
+function Field({ label, children }) {
+  return (
+    <div className="flex flex-col gap-1">
+      <label className="text-xs text-jarvis-muted">{label}</label>
+      {children}
     </div>
   )
 }

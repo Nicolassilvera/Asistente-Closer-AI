@@ -1,6 +1,7 @@
 # src/api/main.py
 import asyncio
 import json
+import threading
 import uuid as _uuid
 from datetime import datetime
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Request
@@ -8,7 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 import os
 
 from src.core.repositories import LeadRepository, LeadEventRepository, ConversationRepository
@@ -106,8 +107,12 @@ class LeadUpdate(BaseModel):
     contact_name:     Optional[str] = None
     category:         Optional[str] = None
     city:             Optional[str] = None
+    province:         Optional[str] = None
     phone:            Optional[str] = None
     whatsapp:         Optional[str] = None
+    email:            Optional[str] = None
+    instagram:        Optional[str] = None
+    website:          Optional[str] = None
     notes:            Optional[str] = None
     lead_score:       Optional[float] = None
     lead_status:      Optional[str] = None
@@ -147,6 +152,67 @@ def pending_followups():
     except DatabaseError as e:
         raise HTTPException(500, e.message)
 
+_find_jobs: dict = {}
+
+class _FindRequest(BaseModel):
+    categories:          List[str]
+    cities:              List[str]
+    max_per_combination: int = 10
+
+@app.post("/api/leads/find")
+def start_lead_find(data: _FindRequest):
+    if not data.categories or not data.cities:
+        raise HTTPException(400, "Se requiere al menos un rubro y una zona")
+
+    job_id = str(_uuid.uuid4())
+    _find_jobs[job_id] = {
+        "id":     job_id,
+        "status": "running",
+        "done":   0,
+        "total":  len(data.categories) * len(data.cities),
+        "found":  0,
+        "logs":   [],
+    }
+
+    def _run():
+        from src.modules.lead_finder.finder import LeadFinder
+        finder = LeadFinder()
+
+        def _on_progress(done, total, cat, city, found, error=None):
+            job = _find_jobs[job_id]
+            job["done"] = done
+            if error:
+                job["logs"].append({"cat": cat, "city": city, "found": 0, "error": error})
+            else:
+                job["found"] += found
+                job["logs"].append({"cat": cat, "city": city, "found": found})
+
+        try:
+            finder.find_batch(
+                data.categories,
+                data.cities,
+                data.max_per_combination,
+                _on_progress,
+            )
+        except Exception as e:
+            _find_jobs[job_id]["error"] = str(e)
+        finally:
+            _find_jobs[job_id]["status"] = "done"
+            try:
+                finder.close()
+            except Exception:
+                pass
+
+    threading.Thread(target=_run, daemon=True, name=f"lead-finder-{job_id[:8]}").start()
+    return {"id": job_id, "total": _find_jobs[job_id]["total"]}
+
+@app.get("/api/leads/find/{job_id}")
+def get_lead_find_status(job_id: str):
+    job = _find_jobs.get(job_id)
+    if not job:
+        raise HTTPException(404, "Job no encontrado")
+    return job
+
 @app.get("/api/leads/{lead_id}")
 def get_lead(lead_id: str):
     try:
@@ -175,6 +241,14 @@ async def update_lead(lead_id: str, data: LeadUpdate):
         events_repo.log(lead_id, "lead_actualizado", f"Campos: {list(updates.keys())}", "humano")
         await manager.broadcast("lead_updated", {"id": lead_id, **updates})
         return {"message": "Lead actualizado"}
+    except DatabaseError as e:
+        raise HTTPException(500, e.message)
+
+@app.delete("/api/leads/{lead_id}", status_code=204)
+async def delete_lead(lead_id: str):
+    try:
+        leads_repo.delete(lead_id)
+        await manager.broadcast("lead_deleted", {"id": lead_id})
     except DatabaseError as e:
         raise HTTPException(500, e.message)
 
@@ -307,6 +381,21 @@ async def wa_task_result(task_id: str, request: Request):
         raise HTTPException(404, "Tarea no encontrada")
     task["status"] = "done"
     task["result"] = data
+
+    # Auto-avanzar estado del lead a "contactado" si el mensaje se envió OK
+    if data.get("success") and task.get("lead_id"):
+        try:
+            lead = leads_repo.get_by_id(task["lead_id"])
+            if lead and lead.get("lead_status") in ("nuevo", "analizado"):
+                leads_repo.update_status(task["lead_id"], "contactado",
+                                         "Mensaje enviado por Jarvis")
+                events_repo.log(task["lead_id"], "estado_cambiado",
+                                "→ contactado: mensaje enviado por Jarvis", "jarvis")
+                await manager.broadcast("lead_status_changed",
+                                        {"id": task["lead_id"], "status": "contactado"})
+        except Exception:
+            pass
+
     return {"ok": True}
 
 @app.get("/api/whatsapp/tasks/{task_id}")
