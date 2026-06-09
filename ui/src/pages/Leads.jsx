@@ -1,7 +1,7 @@
 // ui/src/pages/Leads.jsx
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Search, Plus, Phone, MessageCircle, ChevronRight, Sparkles, X, Calendar, Trash2, Download, Upload, Radio } from 'lucide-react'
+import { Search, Plus, Phone, MessageCircle, ChevronRight, Sparkles, X, Calendar, Trash2, Download, Upload, Radio, Globe, WifiOff, AtSign } from 'lucide-react'
 import { getLeads, prospectLead, sendWhatsAppViaJarvis, updateLead, deleteLead, exportLeadsCsv, importLeadsCsv } from '../api'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import StatusBadge, { STATUS_CONFIG } from '../components/StatusBadge'
@@ -14,10 +14,11 @@ const STATUSES = [
 ]
 
 export default function Leads() {
-  const [search,     setSearch]     = useState('')
-  const [filter,     setFilter]     = useState('')
-  const [showForm,   setShowForm]   = useState(false)
-  const [selectedId, setSelectedId] = useState(null)
+  const [search,       setSearch]       = useState('')
+  const [filter,       setFilter]       = useState('')
+  const [digitalOnly,  setDigitalOnly]  = useState(false)
+  const [showForm,     setShowForm]     = useState(false)
+  const [selectedId,   setSelectedId]   = useState(null)
 
   // Estado para el modal de prospección rápida
   const [prospLead,  setProspLead]  = useState(null)
@@ -142,8 +143,12 @@ export default function Leads() {
   }
 
   const { data: leads, isLoading } = useQuery({
-    queryKey: ['leads', search, filter],
-    queryFn:  () => getLeads({ search: search || undefined, status: filter || undefined }),
+    queryKey: ['leads', search, filter, digitalOnly],
+    queryFn:  () => getLeads({
+      search:        search        || undefined,
+      status:        filter        || undefined,
+      business_type: digitalOnly   ? 'digital' : undefined,
+    }),
     refetchInterval: 10000,
   })
 
@@ -240,14 +245,25 @@ export default function Leads() {
       {/* Filtro por estado — chips */}
       <div className="flex items-center gap-2 flex-wrap">
         <button
-          onClick={() => setFilter('')}
+          onClick={() => { setFilter(''); setDigitalOnly(false) }}
           className={`text-xs px-3 py-1.5 rounded-full border transition-colors font-medium
-            ${filter === ''
+            ${!digitalOnly && filter === ''
               ? 'bg-[#FF8C00]/15 border-[#FF8C00]/40 text-[#FF8C00]'
               : 'border-jarvis-border text-jarvis-muted hover:border-jarvis-border/80 hover:text-jarvis-text'
             }`}>
           Todos
         </button>
+        <button
+          onClick={() => { setDigitalOnly(d => !d); setFilter('') }}
+          className={`inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border
+                     transition-colors font-medium
+                     ${digitalOnly
+                       ? 'bg-teal-500/15 border-teal-500/40 text-teal-400'
+                       : 'border-jarvis-border text-jarvis-muted hover:border-teal-500/30 hover:text-teal-400'
+                     }`}>
+          <Globe size={11} /> Prospectos digitales
+        </button>
+        <div className="w-px h-4 bg-jarvis-border mx-1" />
         {STATUSES.map(s => {
           const cfg = STATUS_CONFIG[s]
           const isActive = filter === s
@@ -319,7 +335,17 @@ export default function Leads() {
                   />
                 </td>
                 <td className="px-4 py-3.5">
-                  <div className="font-semibold text-sm text-jarvis-text">{lead.company_name}</div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-sm text-jarvis-text">{lead.company_name}</span>
+                    {lead.business_type === 'digital' && (
+                      <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5
+                                       rounded-full bg-teal-500/10 border border-teal-500/25
+                                       text-teal-400 font-medium whitespace-nowrap">
+                        {lead.instagram ? <AtSign size={9} /> : <WifiOff size={9} />}
+                        Digital
+                      </span>
+                    )}
+                  </div>
                   {lead.contact_name && (
                     <div className="text-xs text-jarvis-muted mt-0.5">{lead.contact_name}</div>
                   )}

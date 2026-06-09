@@ -98,6 +98,9 @@ class LeadFinder:
         saved = []
         for lead in leads:
             try:
+                # Prospectos sin web o con solo redes → oportunidad de venta digital
+                if lead.get("web_type") in ("social", "none") and not lead.get("business_type"):
+                    lead["business_type"] = "digital"
                 lead_id = self.leads_repo.create(lead)
                 self.event_repo.log(
                     lead_id,
@@ -178,11 +181,11 @@ class LeadFinder:
                 leads = self.find(cat, city, max_results=max_per_combination, auto_save=True)
                 all_leads.extend(leads)
                 if progress_callback:
-                    progress_callback(i + 1, total, cat, city, len(leads))
+                    progress_callback(i + 1, total, cat, city, len(leads), leads=leads)
             except Exception as e:
                 logger.warning(f"LeadFinder batch: error en '{cat}' — '{city}': {e}")
                 if progress_callback:
-                    progress_callback(i + 1, total, cat, city, 0, str(e))
+                    progress_callback(i + 1, total, cat, city, 0, str(e), leads=[])
 
         return all_leads
 

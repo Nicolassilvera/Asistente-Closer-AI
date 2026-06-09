@@ -89,11 +89,14 @@ export const sendWhatsAppAndWait = async (contact, message, leadId, timeoutMs = 
 }
 
 // ── LeadFinder ─────────────────────────────────────────
-export const startLeadFind = (categories, cities, maxPerCombination = 10) =>
-  api.post('/leads/find', { categories, cities, max_per_combination: maxPerCombination }).then(r => r.data)
+export const startLeadFind = (categories, cities, maxPerCombination = 10, webTypes = null) =>
+  api.post('/leads/find', { categories, cities, max_per_combination: maxPerCombination, web_types: webTypes }).then(r => r.data)
 
 export const getLeadFindStatus = (jobId) =>
   api.get(`/leads/find/${jobId}`).then(r => r.data)
+
+export const analyzeFinderLead = (lead) =>
+  api.post('/leads/finder/analyze', lead).then(r => r.data)
 
 // ── Chat IA ────────────────────────────────────────────
 export const getChatSessions    = () => api.get('/chat/sessions').then(r => r.data)

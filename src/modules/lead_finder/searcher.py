@@ -117,6 +117,16 @@ class GoogleSearcher:
             logger.warning(f"Error en Google Maps: {e.message}")
             return []
 
+    @staticmethod
+    def _classify_website(url: str) -> str:
+        """Devuelve 'social', 'web', o 'none' según el tipo de URL."""
+        if not url:
+            return "none"
+        u = url.lower()
+        if "instagram.com" in u or "facebook.com" in u:
+            return "social"
+        return "web"
+
     def _extract_place_details(self, page) -> dict:
         """Extrae todos los datos del panel lateral de Google Maps."""
         data = {}
@@ -216,6 +226,24 @@ class GoogleSearcher:
 
         except Exception:
             pass
+
+        # Clasificar presencia web y mover social al campo correcto
+        raw_web = data.get("website", "")
+        wtype   = self._classify_website(raw_web)
+        data["web_type"] = wtype
+
+        if wtype == "social":
+            url_lower = raw_web.lower()
+            if "instagram.com/" in url_lower and not data.get("instagram"):
+                slug = raw_web.split("instagram.com/")[-1].strip("/").split("/")[0]
+                if slug and slug not in _IG_SKIP:
+                    data["instagram"] = f"@{slug}"
+            elif "facebook.com/" in url_lower and not data.get("facebook"):
+                clean = raw_web.split("?")[0].rstrip("/")
+                slug  = clean.split("facebook.com/")[-1].strip("/").split("/")[0]
+                if slug and slug not in _FB_SKIP:
+                    data["facebook"] = clean
+            data["website"] = None  # no es una web real
 
         return data
 

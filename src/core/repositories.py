@@ -83,6 +83,7 @@ class LeadRepository:
         self,
         status: Optional[str] = None,
         priority: Optional[str] = None,
+        business_type: Optional[str] = None,
         limit: int = 100
     ) -> list[dict]:
         """Lista leads con filtros opcionales."""
@@ -95,6 +96,9 @@ class LeadRepository:
             if priority:
                 query += " AND priority = ?"
                 params.append(priority)
+            if business_type:
+                query += " AND business_type = ?"
+                params.append(business_type)
             query += " ORDER BY lead_score DESC, created_at DESC LIMIT ?"
             params.append(limit)
 

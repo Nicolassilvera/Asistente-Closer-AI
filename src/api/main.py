@@ -128,15 +128,16 @@ class StatusUpdate(BaseModel):
 
 @app.get("/api/leads")
 def list_leads(
-    status:   Optional[str] = None,
-    priority: Optional[str] = None,
-    search:   Optional[str] = None,
-    limit:    int = 100
+    status:        Optional[str] = None,
+    priority:      Optional[str] = None,
+    search:        Optional[str] = None,
+    business_type: Optional[str] = None,
+    limit:         int = 100
 ):
     try:
         if search:
             return leads_repo.search(search)
-        return leads_repo.get_all(status=status, priority=priority, limit=limit)
+        return leads_repo.get_all(status=status, priority=priority, business_type=business_type, limit=limit)
     except DatabaseError as e:
         raise HTTPException(500, e.message)
 
@@ -160,6 +161,7 @@ class _FindRequest(BaseModel):
     categories:          List[str]
     cities:              List[str]
     max_per_combination: int = 10
+    web_types:           Optional[List[str]] = None  # None = todos; ["social","none","web"]
 
 @app.post("/api/leads/find")
 def start_lead_find(data: _FindRequest):
@@ -174,13 +176,16 @@ def start_lead_find(data: _FindRequest):
         "total":  len(data.categories) * len(data.cities),
         "found":  0,
         "logs":   [],
+        "leads":  [],
     }
 
     def _run():
         from src.modules.lead_finder.finder import LeadFinder
         finder = LeadFinder()
 
-        def _on_progress(done, total, cat, city, found, error=None):
+        web_filter = set(data.web_types) if data.web_types else None
+
+        def _on_progress(done, total, cat, city, found, error=None, leads=None):
             job = _find_jobs[job_id]
             job["done"] = done
             if error:
@@ -188,6 +193,14 @@ def start_lead_find(data: _FindRequest):
             else:
                 job["found"] += found
                 job["logs"].append({"cat": cat, "city": city, "found": found})
+            if leads:
+                # Guardar todos en el job para mostrar en frontend
+                job["leads"].extend(leads)
+                # Filtrar por web_type para el conteo de "encontrados para CRM"
+                if web_filter:
+                    job["leads_crm"] = job.get("leads_crm", 0) + sum(
+                        1 for l in leads if l.get("web_type") in web_filter
+                    )
 
         try:
             finder.find_batch(
@@ -214,6 +227,38 @@ def get_lead_find_status(job_id: str):
     if not job:
         raise HTTPException(404, "Job no encontrado")
     return job
+
+@app.post("/api/leads/finder/analyze")
+def analyze_finder_lead(lead: dict = Body(...)):
+    try:
+        from src.core.gpt_engine import GPTEngine
+        gpt = GPTEngine()
+        parts = []
+        for f, label in [
+            ("company_name", "Empresa"), ("category", "Rubro"), ("city", "Ciudad"),
+            ("phone", "Teléfono"), ("whatsapp", "WhatsApp"), ("website", "Web"),
+            ("instagram", "Instagram"), ("facebook", "Facebook"),
+            ("rating", "Rating Google"), ("lead_score", "Score"),
+        ]:
+            if lead.get(f):
+                parts.append(f"{label}: {lead[f]}")
+        wtype = lead.get("web_type", "none")
+        parts.append(f"Presencia web: {'web propia' if wtype == 'web' else 'solo redes sociales' if wtype == 'social' else 'sin presencia web'}")
+        context = "\n".join(parts)
+        prompt = f"""Analizá este prospecto encontrado en Google Maps y generá una visión comercial concisa:
+
+{context}
+
+Respondé en 3 oraciones directas:
+1. Qué tipo de negocio es y a qué se dedica
+2. Qué oportunidad representa su nivel de presencia digital
+3. Cómo encarar la prospección: qué ofrecerle y por dónde contactarlo
+
+Sin bullets, solo texto corrido. Sé comercial y directo."""
+        analysis = gpt.ask(prompt)
+        return {"analysis": analysis}
+    except Exception as e:
+        raise HTTPException(500, str(e))
 
 @app.post("/api/leads/import")
 def import_leads_csv(payload: dict):
