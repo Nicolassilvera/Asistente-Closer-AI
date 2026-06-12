@@ -1,7 +1,5 @@
 # src/core/browser.py
 import os
-import time
-import subprocess
 from playwright.sync_api import sync_playwright, Browser, Page, BrowserContext
 from src.core.logger import logger
 from src.core.exceptions import BrowserError
@@ -18,16 +16,13 @@ class BrowserEngine:
         os.makedirs(SESSION_DIR, exist_ok=True)
 
     def _kill_edge_profile(self):
-        """Mata procesos Edge que bloquean el perfil."""
+        """Libera el bloqueo del perfil cerrando el contexto si existe."""
         try:
-            subprocess.run(
-                ["taskkill", "/F", "/IM", "msedge.exe"],
-                capture_output=True, timeout=5
-            )
-            time.sleep(2)
-            logger.debug("Procesos Edge terminados.")
+            if self._context:
+                self._context.close()
+                self._context = None
         except Exception as e:
-            logger.debug(f"No se pudo matar Edge: {e}")
+            logger.debug(f"No se pudo liberar perfil: {e}")
 
     # --->        
 
@@ -200,11 +195,5 @@ class BrowserEngine:
                 self._playwright.stop()
         except Exception:
             pass
-        # Silenciar stderr de Node.js al cerrar
-        import subprocess
-        subprocess.run(
-            ["taskkill", "/F", "/IM", "msedge.exe"],
-            capture_output=True, timeout=3
-        )
         logger.info("Navegador cerrado.")
 

@@ -33,9 +33,31 @@ export default function Leads() {
   const [followDate, setFollowDate] = useState(tomorrow())
   const [followOk,   setFollowOk]   = useState(false)
 
-  // Eliminar
+  // Eliminar individual
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [deleting,     setDeleting]     = useState(false)
+
+  // Eliminar masivo
+  const [showBulkDelete, setShowBulkDelete] = useState(false)
+  const [bulkDeleting,   setBulkDeleting]   = useState(false)
+  const [bulkProgress,   setBulkProgress]   = useState(null)
+
+  const confirmBulkDelete = async () => {
+    const ids = [...selected]
+    setBulkDeleting(true)
+    setBulkProgress({ done: 0, total: ids.length })
+    let done = 0
+    for (const id of ids) {
+      try { await deleteLead(id) } catch {}
+      done++
+      setBulkProgress({ done, total: ids.length })
+    }
+    setBulkDeleting(false)
+    setShowBulkDelete(false)
+    setBulkProgress(null)
+    setSelected(new Set())
+    queryClient.invalidateQueries(['leads'])
+  }
 
   // Importar CSV
   const [importing,   setImporting]   = useState(false)
@@ -194,12 +216,20 @@ export default function Leads() {
         </div>
         <div className="flex items-center gap-2">
           {selected.size > 0 && (
-            <button
-              onClick={() => setShowCampaign(true)}
-              className="flex items-center gap-2 px-3 py-2.5 bg-purple-500/15 border border-purple-500/30
-                         rounded-xl text-sm font-semibold text-purple-400 hover:bg-purple-500/25 transition-colors">
-              <Radio size={14} /> Campaña ({selected.size})
-            </button>
+            <>
+              <button
+                onClick={() => setShowBulkDelete(true)}
+                className="flex items-center gap-2 px-3 py-2.5 bg-red-500/15 border border-red-500/30
+                           rounded-xl text-sm font-semibold text-red-400 hover:bg-red-500/25 transition-colors">
+                <Trash2 size={14} /> Eliminar ({selected.size})
+              </button>
+              <button
+                onClick={() => setShowCampaign(true)}
+                className="flex items-center gap-2 px-3 py-2.5 bg-purple-500/15 border border-purple-500/30
+                           rounded-xl text-sm font-semibold text-purple-400 hover:bg-purple-500/25 transition-colors">
+                <Radio size={14} /> Campaña ({selected.size})
+              </button>
+            </>
           )}
           <label
             title="Importar leads desde CSV"
@@ -413,6 +443,49 @@ export default function Leads() {
       </div>
 
       {showForm && <LeadForm onClose={() => setShowForm(false)} />}
+
+      {/* Modal borrado masivo */}
+      {showBulkDelete && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-jarvis-card border border-red-500/30 rounded-xl w-full max-w-sm p-6 space-y-4">
+            <div>
+              <h3 className="font-heading font-bold text-base text-jarvis-text">Eliminar leads</h3>
+              <p className="text-sm text-jarvis-muted mt-1">
+                ¿Eliminás <span className="text-red-400 font-semibold">{selected.size} lead{selected.size !== 1 ? 's' : ''}</span>?
+                Esta acción no se puede deshacer.
+              </p>
+            </div>
+
+            {bulkProgress && (
+              <div className="space-y-2">
+                <div className="flex justify-between text-xs text-jarvis-muted">
+                  <span>Eliminando...</span>
+                  <span>{bulkProgress.done} / {bulkProgress.total}</span>
+                </div>
+                <div className="w-full bg-jarvis-surface rounded-full h-1.5 overflow-hidden">
+                  <div className="h-full bg-red-500 rounded-full transition-all duration-300"
+                    style={{ width: `${(bulkProgress.done / bulkProgress.total) * 100}%` }} />
+                </div>
+              </div>
+            )}
+
+            <div className="flex gap-2">
+              <button onClick={() => setShowBulkDelete(false)} disabled={bulkDeleting}
+                className="flex-1 px-3 py-2.5 border border-jarvis-border rounded-xl text-sm
+                           text-jarvis-muted hover:bg-jarvis-surface transition-colors font-medium
+                           disabled:opacity-40">
+                Cancelar
+              </button>
+              <button onClick={confirmBulkDelete} disabled={bulkDeleting}
+                className="flex-1 px-3 py-2.5 bg-red-500/15 hover:bg-red-500/25 border
+                           border-red-500/30 rounded-xl text-sm text-red-400 font-semibold
+                           transition-colors disabled:opacity-40">
+                {bulkDeleting ? 'Eliminando...' : 'Eliminar todo'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Modal campaña masiva WA ── */}
       {showCampaign && (
